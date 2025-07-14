@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+int main()
+{
     printf("Hello smercer%d!!\n", ten);
     return EXIT_SUCCESS;
 }
