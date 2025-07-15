@@ -32,5 +32,5 @@ void print_bitboard(uint64_t bb) {
     }
     puts("  +----------------");
     puts("    A B C D E F G H");
-    printf("\nHex: 0x%016" PRIX64 "\n\n", bb);
+    printf("\nHex: 0x%" PRIX64 "\n\n", bb);
 }
