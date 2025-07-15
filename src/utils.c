@@ -28,9 +28,9 @@ void print_bitboard(uint64_t bb) {
             auto sq = r * 8 + f;
             printf("%d ", is_set(bb, sq) ? 1 : 0);
         }
-        printf("\n");
+        puts("");
     }
-    printf("  +----------------\n");
-    printf("    A B C D E F G H\n");
-    printf("\nHex: 0x%016" PRIX64 "\n", bb);
+    puts("  +----------------");
+    puts("    A B C D E F G H");
+    printf("\nHex: 0x%016" PRIX64 "\n\n", bb);
 }
