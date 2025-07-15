@@ -8,22 +8,22 @@ uint64_t gen_rook_attacks(int start_sq, uint64_t occ) {
 
     uint64_t attacks = 0;
 
-    // North.
+    // North
     for (int sq = start_sq + 8; sq < 64; sq += 8) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // South.
+    // South
     for (int sq = start_sq - 8; sq >= 0; sq -= 8) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // East.
+    // East
     for (int sq = start_sq + 1; (sq < 64) && ((sq & 7) != 0); ++sq) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // West.
+    // West
     for (int sq = start_sq - 1; (sq >= 0) && ((sq & 7) != 7); --sq) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
@@ -37,22 +37,22 @@ uint64_t gen_bishop_attacks(int start_sq, uint64_t occ) {
 
     uint64_t attacks = 0;
 
-    // Northeast.
+    // Northeast
     for (int sq = start_sq + 9; (sq < 64) && ((sq & 7) != 0); sq += 9) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // Northwest.
+    // Northwest
     for (int sq = start_sq + 7; (sq < 64) && ((sq & 7) != 7); sq += 7) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // Southeast.
+    // Southeast
     for (int sq = start_sq - 7; (sq >= 0) && ((sq & 7) != 0); sq -= 7) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
     }
-    // Southwest.
+    // Southwest
     for (int sq = start_sq - 9; (sq >= 0) && ((sq & 7) != 7); sq -= 9) {
         attacks |= (UINT64_C(1) << sq);
         if (occ & (UINT64_C(1) << sq)) break;
