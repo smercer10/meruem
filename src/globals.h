@@ -9,16 +9,12 @@ enum Square {
     A5, B5, C5, D5, E5, F5, G5, H5,
     A6, B6, C6, D6, E6, F6, G6, H6,
     A7, B7, C7, D7, E7, F7, G7, H7,
-    A8, B8, C8, D8, E8, F8, G8, H8 
+    A8, B8, C8, D8, E8, F8, G8, H8, NA 
 };
 // clang-format on
 
-enum Piece { PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 enum Side { WHITE, BLACK, ALL };
+enum Castling { WKS = 0b0001, WQS = 0b0010, BKS = 0b0100, BQS = 0b1000 };
+enum Piece { WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK };
 
-// Castling rights (represented by 4 bits):
-//   - 0001 = WK
-//   - 0010 = WQ
-//   - 0100 = BK
-//   - 1000 = BQ
-enum Castling { WK, WQ, BK, BQ };
+static constexpr char ascii_pieces[12] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};

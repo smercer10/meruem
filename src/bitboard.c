@@ -11,14 +11,14 @@ bool is_set(uint64_t bb, int sq) {
     return (bb & (UINT64_C(1) << sq)) != 0;
 }
 
-uint64_t set_bit(uint64_t bb, int sq) {
+void set_bit(uint64_t* bb, int sq) {
     assert(sq >= 0 && sq < 64);
-    return bb | (UINT64_C(1) << sq);
+    *bb |= (UINT64_C(1) << sq);
 }
 
-uint64_t clear_bit(uint64_t bb, int sq) {
+void clear_bit(uint64_t* bb, int sq) {
     assert(sq >= 0 && sq < 64);
-    return bb & ~(UINT64_C(1) << sq);
+    *bb &= ~(UINT64_C(1) << sq);
 }
 
 void print_bitboard(uint64_t bb) {
@@ -31,6 +31,6 @@ void print_bitboard(uint64_t bb) {
         puts("");
     }
     puts("  +----------------");
-    puts("    A B C D E F G H");
-    printf("\nHex: 0x%016" PRIX64 "\n\n", bb);
+    puts("    A B C D E F G H\n");
+    printf("Hex: 0x%016" PRIX64 "\n", bb);
 }

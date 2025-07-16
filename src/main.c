@@ -3,19 +3,24 @@
 
 #include "bitboard.h"
 #include "globals.h"
-#include "sliders.h"
+#include "state.h"
 
 int main() {
-    init_slider_attack_tables();
+    State state = {0};
 
-    uint64_t occ = 0;
-    occ = set_bit(occ, E4);
-    occ = set_bit(occ, F7);
-    occ = set_bit(occ, D4);
-    occ = set_bit(occ, G5);
-    occ = set_bit(occ, A8);
+    state.pieces[0] = 0x000000000000FF00;
+    state.pieces[6] = 0x00FF000000000000;
+    set_bit(&state.pieces[WN], B1);
+    clear_bit(&state.pieces[0], A2);
 
-    print_bitboard(get_queen_attacks(D5, occ));
+    state.packed.side = WHITE;
+    state.packed.en_passant = NA;
+    state.packed.castling = WKS | WQS | BQS;
+    state.packed.halfmove = 0;
+    state.packed.fullmove = 1;
+    state.zobrist_hash = 0x123456789ABCDEF0;
+
+    print_state(&state);
 
     return EXIT_SUCCESS;
 }
