@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "bitboard.h"
+#include "attacks.h"
 #include "fen.h"
 #include "globals.h"
+#include "sliders.h"
 #include "state.h"
 
 #define empty_board "8/8/8/8/8/8/8/8 w - - "
@@ -13,13 +15,14 @@
 #define cmk_position "r2q1rk1/ppp2ppp/2n1bn2/2b1p3/3pP3/3P1NPP/PPP1NPB1/R1BQ1RK1 b - - 0 9 "
 
 int main() {
+    init_slider_attack_tables();
+
     State state = {0};
 
-    parse_fen(cmk_position, &state);
+    parse_fen(tricky_position, &state);
     print_state(&state);
-    print_bitboard(state.occupancy[WHITE]);
-    print_bitboard(state.occupancy[BLACK]);
-    print_bitboard(state.occupancy[ALL]);
+
+    printf("%d\n", is_attacked(H4, BLACK, &state));
 
     return EXIT_SUCCESS;
 }
