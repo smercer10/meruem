@@ -11,6 +11,7 @@
 bool is_attacked(int sq, int attacking_side, const State* state) {
     assert(sq >= 0 && sq < 64);
     assert(attacking_side == WHITE || attacking_side == BLACK);
+    assert(state != nullptr);
 
     if ((attacking_side == WHITE) && (pawn_attacks[BLACK][sq] & state->pieces[WP])) return true;
     if ((attacking_side == BLACK) && (pawn_attacks[WHITE][sq] & state->pieces[BP])) return true;

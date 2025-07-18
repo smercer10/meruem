@@ -1,5 +1,6 @@
 #include "fen.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
 
@@ -39,11 +40,14 @@ static int char_to_piece(char c) {
 }
 
 static int parse_square(const char* str) {
+    assert(str != nullptr);
     if (str[0] < 'a' || str[0] > 'h' || str[1] < '1' || str[1] > '8') return NA;
     return (str[1] - '1') * 8 + (str[0] - 'a');
 }
 
 void parse_fen(const char* fen, State* state) {
+    assert(fen != nullptr && state != nullptr);
+
     // Reset bitboards
     for (int i = 0; i < 12; ++i) {
         state->pieces[i] = 0;

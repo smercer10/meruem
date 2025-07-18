@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <globals.h>
 #include <inttypes.h>
+#include <stdbit.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -12,13 +13,20 @@ bool is_set(uint64_t bb, int sq) {
 }
 
 void set_bit(uint64_t* bb, int sq) {
-    assert(sq >= 0 && sq < 64);
+    assert(bb != nullptr && sq >= 0 && sq < 64);
     *bb |= (UINT64_C(1) << sq);
 }
 
 void clear_bit(uint64_t* bb, int sq) {
-    assert(sq >= 0 && sq < 64);
+    assert(bb != nullptr && sq >= 0 && sq < 64);
     *bb &= ~(UINT64_C(1) << sq);
+}
+
+int pop_lsb(uint64_t* bb) {
+    assert(bb != nullptr && *bb != 0);
+    const int sq = (int)stdc_first_trailing_one(*bb) - 1;  // -1 to convert to 0-indexed square
+    clear_bit(bb, sq);
+    return sq;
 }
 
 void print_bitboard(uint64_t bb) {
