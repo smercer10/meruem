@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "attacks.h"
 #include "bitboard.h"
 #include "globals.h"
 #include "leapers.h"
@@ -18,6 +19,7 @@ void generate_moves(const State* state) {
     int target_sq = NA;
 
     if (state->packed.side == WHITE) {
+        // Pawn moves
         bb = state->pieces[WP];
         while (bb) {
             source_sq = pop_lsb(&bb);
@@ -60,7 +62,22 @@ void generate_moves(const State* state) {
                 }
             }
         }
+        // Castling moves
+        // King-side
+        if ((state->packed.castling & WKS)  // Implies king and rook are on their original squaresS
+            && !is_set(state->occupancy[ALL], F1) && !is_set(state->occupancy[ALL], G1) &&
+            !is_attacked(E1, BLACK, state) && !is_attacked(F1, BLACK, state)) {  // Check if G1 is under attack later
+            puts("0-0");
+        }
+        // Queen-side
+        if ((state->packed.castling & WQS) &&  // Implies king and rook are on their original squares
+            !is_set(state->occupancy[ALL], D1) && !is_set(state->occupancy[ALL], C1) &&
+            !is_set(state->occupancy[ALL], B1) && !is_attacked(E1, BLACK, state) &&
+            !is_attacked(D1, BLACK, state)) {  // Check if C1 is under attack later
+            puts("0-0-0");
+        }
     } else {
+        // Pawn moves
         bb = state->pieces[BP];
         while (bb) {
             source_sq = pop_lsb(&bb);
@@ -102,6 +119,20 @@ void generate_moves(const State* state) {
                     }
                 }
             }
+        }
+        // Castling moves
+        // King-side
+        if ((state->packed.castling & BKS) &&  // Implies king and rook are on their original squares
+            !is_set(state->occupancy[ALL], F8) && !is_set(state->occupancy[ALL], G8) &&
+            !is_attacked(E8, WHITE, state) && !is_attacked(F8, WHITE, state)) {  // Check if G8 is under attack later
+            puts("0-0");
+        }
+        // Queen-side
+        if ((state->packed.castling & BQS) &&  // Implies king and rook are on their original squares
+            !is_set(state->occupancy[ALL], D8) && !is_set(state->occupancy[ALL], C8) &&
+            !is_set(state->occupancy[ALL], B8) && !is_attacked(E8, WHITE, state) &&
+            !is_attacked(D8, WHITE, state)) {  // Check if C8 is under attack later
+            puts("0-0-0");
         }
     }
 }

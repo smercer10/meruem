@@ -17,7 +17,7 @@ int main() {
 
     State state = {0};
 
-    parse_fen("r3k2r/2ppqpb1/bn2pnp1/3PN3/Pp2P3/2N2Q1p/1PPBBPPP/R3K2R b KQkq a3 0 1 ", &state);
+    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1 ", &state);
     print_state(&state);
 
     generate_moves(&state);
