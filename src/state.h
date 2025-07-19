@@ -18,4 +18,6 @@ typedef struct {
     } packed;
 } State;
 
+static constexpr char ascii_pieces[12] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};
+
 void print_state(const State* state);

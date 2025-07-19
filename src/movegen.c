@@ -12,6 +12,38 @@
 #include "sliders.h"
 #include "state.h"
 
+Move encode_move(int source_sq, int target_sq, int moved_piece, int promoted_piece, bool is_capture,
+                 bool is_double_push, bool is_en_passant, bool is_castling) {
+    assert(source_sq >= 0 && source_sq < 64);
+    assert(target_sq >= 0 && target_sq < 64);
+    assert(moved_piece >= 0 && moved_piece < 12);
+    assert(promoted_piece >= 0 && promoted_piece < 12);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+    Move move = {.source_sq = (uint32_t)source_sq,
+                 .target_sq = (uint32_t)target_sq,
+                 .moved_piece = (uint32_t)moved_piece,
+                 .promoted_piece = (uint32_t)promoted_piece,
+                 .is_capture = is_capture,
+                 .is_double_push = is_double_push,
+                 .is_en_passant = is_en_passant,
+                 .is_castling = is_castling,
+                 .unused = 0};
+#pragma GCC diagnostic pop
+
+    return move;
+}
+
+int get_source_sq(Move move) { return move.source_sq; }
+int get_target_sq(Move move) { return move.target_sq; }
+int get_moved_piece(Move move) { return move.moved_piece; }
+int get_promoted_piece(Move move) { return move.promoted_piece; }
+bool is_capture(Move move) { return move.is_capture; }
+bool is_double_push(Move move) { return move.is_double_push; }
+bool is_en_passant(Move move) { return move.is_en_passant; }
+bool is_castling(Move move) { return move.is_castling; }
+
 // TODO: Refactor this to reduce code duplication and improve performance
 void generate_moves(const State* state) {
     assert(state != nullptr);

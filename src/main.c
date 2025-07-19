@@ -1,7 +1,8 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "fen.h"
+#include "globals.h"
 #include "movegen.h"
 #include "sliders.h"
 #include "state.h"
@@ -15,12 +16,15 @@
 int main() {
     init_slider_attack_tables();
 
-    State state = {0};
-
-    parse_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ", &state);
-    print_state(&state);
-
-    generate_moves(&state);
+    Move move = encode_move(E2, E4, WP, WQ, false, true, false, false);
+    printf("Source Square: %s\n", squares[get_source_sq(move)]);
+    printf("Target Square: %s\n", squares[get_target_sq(move)]);
+    printf("Moved Piece: %c\n", ascii_pieces[get_moved_piece(move)]);
+    printf("Promoted Piece: %c\n", ascii_pieces[get_promoted_piece(move)]);
+    printf("Is Capture: %s\n", is_capture(move) ? "Yes" : "No");
+    printf("Is Double Push: %s\n", is_double_push(move) ? "Yes" : "No");
+    printf("Is En Passant: %s\n", is_en_passant(move) ? "Yes" : "No");
+    printf("Is Castling: %s\n", is_castling(move) ? "Yes" : "No");
 
     return EXIT_SUCCESS;
 }
