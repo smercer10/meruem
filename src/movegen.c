@@ -180,4 +180,18 @@ void generate_moves(const State* state) {
             }
         }
     }
+    // Queen moves
+    bb = (state->packed.side == WHITE) ? state->pieces[WQ] : state->pieces[BQ];
+    while (bb) {
+        source_sq = pop_lsb(&bb);
+        attacks = get_queen_attacks(source_sq, state->occupancy[ALL]) & ~state->occupancy[state->packed.side];
+        while (attacks) {
+            target_sq = pop_lsb(&attacks);
+            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+                printf("%sx%s\n", squares[source_sq], squares[target_sq]);
+            } else {
+                printf("%s%s\n", squares[source_sq], squares[target_sq]);
+            }
+        }
+    }
 }
