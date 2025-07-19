@@ -41,4 +41,4 @@ void add_move(MoveList* move_list, Move move);
 void print_move(Move move);                       // For UCI
 void print_move_list(const MoveList* move_list);  // For debugging
 
-void generate_moves(const State* state);
+void generate_moves(const State* state, MoveList* move_list);

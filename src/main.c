@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "globals.h"
+#include "fen.h"
 #include "movegen.h"
 #include "sliders.h"
 
@@ -14,11 +14,11 @@
 int main() {
     init_slider_attack_tables();
 
-    Move move1 = encode_move(E2, E4, WP, WB, false, true, false, false);
-    Move move2 = encode_move(B1, C3, WN, -1, false, false, false, false);
+    State state = {0};
+    parse_fen(tricky_position, &state);
+
     MoveList move_list = {.count = 0};
-    add_move(&move_list, move1);
-    add_move(&move_list, move2);
+    generate_moves(&state, &move_list);
     print_move_list(&move_list);
 
     return EXIT_SUCCESS;
