@@ -11,10 +11,12 @@
 #include "leapers.h"
 #include "state.h"
 
+// TODO: Refactor this to reduce code duplication and improve performance
 void generate_moves(const State* state) {
     assert(state != nullptr);
 
     uint64_t bb = 0;
+    uint64_t attacks = 0;
     int source_sq = NA;
     int target_sq = NA;
 
@@ -40,7 +42,7 @@ void generate_moves(const State* state) {
                     }
                 }
                 // Normal captures
-                uint64_t attacks = pawn_attacks[WHITE][source_sq] & state->occupancy[BLACK];
+                attacks = pawn_attacks[WHITE][source_sq] & state->occupancy[BLACK];
                 while (attacks) {
                     target_sq = pop_lsb(&attacks);
                     if (target_sq >= A8) {  // Promotion
@@ -98,7 +100,7 @@ void generate_moves(const State* state) {
                     }
                 }
                 // Normal captures
-                uint64_t attacks = pawn_attacks[BLACK][source_sq] & state->occupancy[WHITE];
+                attacks = pawn_attacks[BLACK][source_sq] & state->occupancy[WHITE];
                 while (attacks) {
                     target_sq = pop_lsb(&attacks);
                     if (target_sq <= H1) {  // Promotion
@@ -133,6 +135,20 @@ void generate_moves(const State* state) {
             !is_set(state->occupancy[ALL], B8) && !is_attacked(E8, WHITE, state) &&
             !is_attacked(D8, WHITE, state)) {  // Check if C8 is under attack later
             puts("0-0-0");
+        }
+    }
+    // Knight moves
+    bb = (state->packed.side == WHITE) ? state->pieces[WN] : state->pieces[BN];
+    while (bb) {
+        source_sq = pop_lsb(&bb);
+        attacks = knight_attacks[source_sq] & ~state->occupancy[state->packed.side];
+        while (attacks) {
+            target_sq = pop_lsb(&attacks);
+            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+                printf("%sx%s\n", squares[source_sq], squares[target_sq]);
+            } else {
+                printf("%s%s\n", squares[source_sq], squares[target_sq]);
+            }
         }
     }
 }
