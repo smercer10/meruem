@@ -9,6 +9,7 @@
 #include "bitboard.h"
 #include "globals.h"
 #include "leapers.h"
+#include "sliders.h"
 #include "state.h"
 
 // TODO: Refactor this to reduce code duplication and improve performance
@@ -142,6 +143,20 @@ void generate_moves(const State* state) {
     while (bb) {
         source_sq = pop_lsb(&bb);
         attacks = knight_attacks[source_sq] & ~state->occupancy[state->packed.side];
+        while (attacks) {
+            target_sq = pop_lsb(&attacks);
+            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+                printf("%sx%s\n", squares[source_sq], squares[target_sq]);
+            } else {
+                printf("%s%s\n", squares[source_sq], squares[target_sq]);
+            }
+        }
+    }
+    // Bishop moves
+    bb = (state->packed.side == WHITE) ? state->pieces[WB] : state->pieces[BB];
+    while (bb) {
+        source_sq = pop_lsb(&bb);
+        attacks = get_bishop_attacks(source_sq, state->occupancy[ALL]) & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
             if (is_set(state->occupancy[!state->packed.side], target_sq)) {
