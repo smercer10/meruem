@@ -17,7 +17,9 @@ Move encode_move(int source_sq, int target_sq, int moved_piece, int promoted_pie
     assert(source_sq >= 0 && source_sq < 64);
     assert(target_sq >= 0 && target_sq < 64);
     assert(moved_piece >= 0 && moved_piece < 12);
-    assert(promoted_piece >= 0 && promoted_piece < 12);
+    assert(promoted_piece < 12);
+
+    if (promoted_piece < 0) promoted_piece = 12;  // No promotion
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -43,6 +45,31 @@ bool is_capture(Move move) { return move.is_capture; }
 bool is_double_push(Move move) { return move.is_double_push; }
 bool is_en_passant(Move move) { return move.is_en_passant; }
 bool is_castling(Move move) { return move.is_castling; }
+
+void add_move(MoveList* move_list, Move move) {
+    assert(move_list != nullptr);
+    assert(move_list->count < 256);
+    move_list->moves[move_list->count++] = move;
+}
+
+void print_move(Move move) {
+    printf("%s%s", squares[move.source_sq], squares[move.target_sq]);
+    if (move.promoted_piece < 12) {
+        printf("%c", promotion_pieces[move.promoted_piece]);
+    }
+}
+
+void print_move_list(const MoveList* move_list) {
+    assert(move_list != nullptr);
+    for (int i = 0; i < move_list->count; ++i) {
+        printf("%d: ", i + 1);
+        print_move(move_list->moves[i]);
+        printf(",%c,%c,%c,%c,%c\n", ascii_pieces[get_moved_piece(move_list->moves[i])],
+               is_capture(move_list->moves[i]) ? 'y' : 'n', is_double_push(move_list->moves[i]) ? 'y' : 'n',
+               is_en_passant(move_list->moves[i]) ? 'y' : 'n', is_castling(move_list->moves[i]) ? 'y' : 'n');
+    }
+    printf("\nTotal moves: %d\n", move_list->count);
+}
 
 // TODO: Refactor this to reduce code duplication and improve performance
 void generate_moves(const State* state) {

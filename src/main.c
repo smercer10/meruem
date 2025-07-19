@@ -1,11 +1,9 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "globals.h"
 #include "movegen.h"
 #include "sliders.h"
-#include "state.h"
 
 #define empty_board "8/8/8/8/8/8/8/8 w - - "
 #define start_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 "
@@ -16,15 +14,12 @@
 int main() {
     init_slider_attack_tables();
 
-    Move move = encode_move(E2, E4, WP, WQ, false, true, false, false);
-    printf("Source Square: %s\n", squares[get_source_sq(move)]);
-    printf("Target Square: %s\n", squares[get_target_sq(move)]);
-    printf("Moved Piece: %c\n", ascii_pieces[get_moved_piece(move)]);
-    printf("Promoted Piece: %c\n", ascii_pieces[get_promoted_piece(move)]);
-    printf("Is Capture: %s\n", is_capture(move) ? "Yes" : "No");
-    printf("Is Double Push: %s\n", is_double_push(move) ? "Yes" : "No");
-    printf("Is En Passant: %s\n", is_en_passant(move) ? "Yes" : "No");
-    printf("Is Castling: %s\n", is_castling(move) ? "Yes" : "No");
+    Move move1 = encode_move(E2, E4, WP, WB, false, true, false, false);
+    Move move2 = encode_move(B1, C3, WN, -1, false, false, false, false);
+    MoveList move_list = {.count = 0};
+    add_move(&move_list, move1);
+    add_move(&move_list, move2);
+    print_move_list(&move_list);
 
     return EXIT_SUCCESS;
 }
