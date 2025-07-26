@@ -281,7 +281,7 @@ bool make_move(State* state, Move move, int move_type) {
     assert(move_type == ALL_MOVES || move_type == JUST_CAPTURES);
 
     if (move_type == JUST_CAPTURES) {
-        if (is_capture(move)) {
+        if (move.is_capture) {
             make_move(state, move, ALL_MOVES);
         } else {
             return false;
@@ -291,6 +291,16 @@ bool make_move(State* state, Move move, int move_type) {
 
         clear_bit(&state->pieces[move.moved_piece], move.source_sq);
         set_bit(&state->pieces[move.moved_piece], move.target_sq);
+
+        if (move.is_capture) {
+            int piece_idx_start = (state->packed.side == WHITE) ? 6 : 0;  // Opponent's pieces
+            for (int i = piece_idx_start; i < piece_idx_start + 6; ++i) {
+                if (is_set(state->pieces[i], move.target_sq)) {
+                    clear_bit(&state->pieces[i], move.target_sq);
+                    break;
+                }
+            }
+        }
 
         // *state = backup;
     }
