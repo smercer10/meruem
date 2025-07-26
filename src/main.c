@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "fen.h"
 #include "movegen.h"
 #include "sliders.h"
+#include "state.h"
 
 #define empty_board "8/8/8/8/8/8/8/8 w - - "
 #define start_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 "
@@ -19,7 +21,15 @@ int main() {
 
     MoveList move_list = {.count = 0};
     generate_moves(&state, &move_list);
-    print_move_list(&move_list);
+
+    for (int i = 0; i < move_list.count; ++i) {
+        State backup = state;
+        make_move(&state, move_list.moves[i], ALL_MOVES);
+        print_move(move_list.moves[i]);
+        puts("\n");
+        print_state(&state);
+        state = backup;
+    }
 
     return EXIT_SUCCESS;
 }

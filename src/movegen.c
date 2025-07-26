@@ -275,3 +275,24 @@ void generate_moves(const State* state, MoveList* move_list) {
         }
     }
 }
+
+bool make_move(State* state, Move move, int move_type) {
+    assert(state != nullptr);
+    assert(move_type == ALL_MOVES || move_type == JUST_CAPTURES);
+
+    if (move_type == JUST_CAPTURES) {
+        if (is_capture(move)) {
+            make_move(state, move, ALL_MOVES);
+        } else {
+            return false;
+        }
+    } else {
+        // State backup = *state;
+
+        clear_bit(&state->pieces[move.moved_piece], move.source_sq);
+        set_bit(&state->pieces[move.moved_piece], move.target_sq);
+
+        // *state = backup;
+    }
+    return true;
+}

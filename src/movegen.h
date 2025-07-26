@@ -23,6 +23,8 @@ typedef struct {
     int count;
 } MoveList;
 
+enum MoveType { ALL_MOVES, JUST_CAPTURES };
+
 static constexpr char promotion_pieces[] = {
     [WQ] = 'q', [WR] = 'r', [WB] = 'b', [WN] = 'n', [BQ] = 'q', [BR] = 'r', [BB] = 'b', [BN] = 'n'};
 
@@ -42,3 +44,4 @@ void print_move(Move move);                       // For UCI
 void print_move_list(const MoveList* move_list);  // For debugging
 
 void generate_moves(const State* state, MoveList* move_list);
+bool make_move(State* state, Move move, int move_type);
