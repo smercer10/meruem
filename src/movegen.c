@@ -302,6 +302,11 @@ bool make_move(State* state, Move move, int move_type) {
             }
         }
 
+        if (move.promoted_piece != 12) {
+            clear_bit(&state->pieces[move.moved_piece], move.target_sq);
+            set_bit(&state->pieces[move.promoted_piece], move.target_sq);
+        }
+
         // *state = backup;
     }
     return true;
