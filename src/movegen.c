@@ -363,6 +363,15 @@ bool make_move(State* state, Move move, int move_type) {
         state->packed.castling &= castling_rights[move.target_sq];
 #pragma GCC diagnostic pop
 
+        state->occupancy[WHITE] = 0;
+        state->occupancy[BLACK] = 0;
+        state->occupancy[ALL] = 0;
+        state->occupancy[WHITE] |= state->pieces[WP] | state->pieces[WN] | state->pieces[WB] | state->pieces[WR] |
+                                   state->pieces[WQ] | state->pieces[WK];
+        state->occupancy[BLACK] |= state->pieces[BP] | state->pieces[BN] | state->pieces[BB] | state->pieces[BR] |
+                                   state->pieces[BQ] | state->pieces[BK];
+        state->occupancy[ALL] = state->occupancy[WHITE] | state->occupancy[BLACK];
+
         // *state = backup;
     }
     return true;

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "bitboard.h"
 #include "fen.h"
 #include "movegen.h"
 #include "sliders.h"
@@ -28,6 +29,9 @@ int main() {
         print_move(move_list.moves[i]);
         puts("\n");
         print_state(&state);
+        print_bitboard(state.occupancy[WHITE]);
+        print_bitboard(state.occupancy[BLACK]);
+        print_bitboard(state.occupancy[ALL]);
         state = backup;
     }
 
