@@ -324,6 +324,26 @@ bool make_move(State* state, Move move, int move_type) {
             }
         }
 
+        if (move.is_castling) {
+            if (state->packed.side == WHITE) {
+                if (move.target_sq == G1) {
+                    clear_bit(&state->pieces[WR], H1);
+                    set_bit(&state->pieces[WR], F1);
+                } else if (move.target_sq == C1) {
+                    clear_bit(&state->pieces[WR], A1);
+                    set_bit(&state->pieces[WR], D1);
+                }
+            } else {
+                if (move.target_sq == G8) {
+                    clear_bit(&state->pieces[BR], H8);
+                    set_bit(&state->pieces[BR], F8);
+                } else if (move.target_sq == C8) {
+                    clear_bit(&state->pieces[BR], A8);
+                    set_bit(&state->pieces[BR], D8);
+                }
+            }
+        }
+
         // *state = backup;
     }
     return true;
