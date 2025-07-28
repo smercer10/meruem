@@ -307,6 +307,14 @@ bool make_move(State* state, Move move, int move_type) {
             set_bit(&state->pieces[move.promoted_piece], move.target_sq);
         }
 
+        if (move.is_en_passant) {
+            if (state->packed.side == WHITE) {
+                clear_bit(&state->pieces[BP], move.target_sq - 8);
+            } else {
+                clear_bit(&state->pieces[WP], move.target_sq + 8);
+            }
+        }
+
         // *state = backup;
     }
     return true;

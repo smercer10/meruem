@@ -17,7 +17,7 @@ int main() {
     init_slider_attack_tables();
 
     State state = {0};
-    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPpP/R3K2R b KQkq - 0 1 ", &state);
+    parse_fen("r3k2r/pP1pqpb1/bn2pnp1/2pPN3/Pp2P3/2N2Q1p/1PPBBPpP/R3K2R b KQkq a3 0 1 ", &state);
 
     MoveList move_list = {.count = 0};
     generate_moves(&state, &move_list);
