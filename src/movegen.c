@@ -276,6 +276,19 @@ void generate_moves(const State* state, MoveList* move_list) {
     }
 }
 
+// clang-format off
+static constexpr uint32_t castling_rights[64] = {
+    13, 15, 15, 15, 12, 15, 15, 14,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    7,  15, 15, 15, 3,  15, 15, 11
+};
+// clang-format on
+
 bool make_move(State* state, Move move, int move_type) {
     assert(state != nullptr);
     assert(move_type == ALL_MOVES || move_type == JUST_CAPTURES);
@@ -343,6 +356,12 @@ bool make_move(State* state, Move move, int move_type) {
                 }
             }
         }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+        state->packed.castling &= castling_rights[move.source_sq];
+        state->packed.castling &= castling_rights[move.target_sq];
+#pragma GCC diagnostic pop
 
         // *state = backup;
     }
