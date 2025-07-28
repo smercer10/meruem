@@ -22,9 +22,14 @@ void clear_bit(uint64_t* bb, int sq) {
     *bb &= ~(UINT64_C(1) << sq);
 }
 
+int get_lsb(uint64_t bb) {
+    assert(bb != 0);
+    return (int)stdc_first_trailing_one(bb) - 1;  // -1 to convert to 0-indexed square
+}
+
 int pop_lsb(uint64_t* bb) {
     assert(bb != nullptr && *bb != 0);
-    const int sq = (int)stdc_first_trailing_one(*bb) - 1;  // -1 to convert to 0-indexed square
+    const int sq = get_lsb(*bb);
     clear_bit(bb, sq);
     return sq;
 }

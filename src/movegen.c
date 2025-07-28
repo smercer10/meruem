@@ -300,7 +300,7 @@ bool make_move(State* state, Move move, int move_type) {
             return false;
         }
     } else {
-        // State backup = *state;
+        State backup = *state;
 
         clear_bit(&state->pieces[move.moved_piece], move.source_sq);
         set_bit(&state->pieces[move.moved_piece], move.target_sq);
@@ -372,7 +372,13 @@ bool make_move(State* state, Move move, int move_type) {
                                    state->pieces[BQ] | state->pieces[BK];
         state->occupancy[ALL] = state->occupancy[WHITE] | state->occupancy[BLACK];
 
-        // *state = backup;
+        if (is_attacked(get_lsb(state->pieces[WK + (6 * state->packed.side)]), !state->packed.side, state)) {
+            *state = backup;
+            return false;
+        }
+
+        state->packed.side = !state->packed.side;
     }
+
     return true;
 }

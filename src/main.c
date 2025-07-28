@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bitboard.h"
 #include "fen.h"
 #include "movegen.h"
 #include "sliders.h"
@@ -25,14 +24,12 @@ int main() {
 
     for (int i = 0; i < move_list.count; ++i) {
         State backup = state;
-        make_move(&state, move_list.moves[i], ALL_MOVES);
-        print_move(move_list.moves[i]);
-        puts("\n");
-        print_state(&state);
-        print_bitboard(state.occupancy[WHITE]);
-        print_bitboard(state.occupancy[BLACK]);
-        print_bitboard(state.occupancy[ALL]);
-        state = backup;
+        if (make_move(&state, move_list.moves[i], ALL_MOVES)) {
+            print_move(move_list.moves[i]);
+            puts("\n");
+            print_state(&state);
+            state = backup;
+        }
     }
 
     return EXIT_SUCCESS;
