@@ -315,6 +315,15 @@ bool make_move(State* state, Move move, int move_type) {
             }
         }
 
+        state->packed.en_passant = NA;
+        if (move.is_double_push) {
+            if (state->packed.side == WHITE) {
+                state->packed.en_passant = move.target_sq - 8;
+            } else {
+                state->packed.en_passant = move.target_sq + 8;
+            }
+        }
+
         // *state = backup;
     }
     return true;
