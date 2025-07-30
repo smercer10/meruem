@@ -19,7 +19,7 @@ Move encode_move(int source_sq, int target_sq, int moved_piece, int promoted_pie
     assert(moved_piece >= 0 && moved_piece < 12);
     assert(promoted_piece < 12);
 
-    if (promoted_piece < 0) promoted_piece = 12;  // No promotion
+    if (promoted_piece < 0) promoted_piece = INVALID_PIECE;  // No promotion
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"

@@ -1,12 +1,12 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include "fen.h"
-#include "perft.h"
+#include "movegen.h"
 #include "sliders.h"
 #include "state.h"
+#include "uci.h"
 
 #define empty_board "8/8/8/8/8/8/8/8 w - - "
 #define start_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -18,18 +18,29 @@ int main() {
     init_slider_attack_tables();
 
     State state = {0};
-    parse_fen(tricky_position, &state);
+    parse_fen("r3k2r/pPppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", &state);
 
-    struct timespec start, end;
-    timespec_get(&start, TIME_UTC);
+    // struct timespec start, end;
+    // timespec_get(&start, TIME_UTC);
 
-    long nodes = perft(&state, 5);
+    // long nodes = perft(&state, 5);
 
-    timespec_get(&end, TIME_UTC);
-    long elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+    // timespec_get(&end, TIME_UTC);
+    // long elapsed_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
 
-    printf("Nodes: %ld\n", nodes);
-    printf("Elapsed time: %ld ms\n", elapsed_ms);
+    // printf("Nodes: %ld\n", nodes);
+    // printf("Elapsed time: %ld ms\n", elapsed_ms);
+
+    print_state(&state);
+
+    Move move = parse_move(&state, "b7b8");
+    if (move.is_invalid) {
+        puts("Invalid move");
+    } else {
+        puts("Parsed move: ");
+        print_move(move);
+        puts("");
+    }
 
     return EXIT_SUCCESS;
 }

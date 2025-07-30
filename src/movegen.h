@@ -14,7 +14,8 @@ typedef union {
         uint32_t is_double_push : 1;
         uint32_t is_en_passant : 1;
         uint32_t is_castling : 1;
-        uint32_t unused : 12;
+        uint32_t is_invalid : 1;
+        uint32_t unused : 11;
     };
 } Move;
 

@@ -15,7 +15,7 @@ enum Square {
 
 enum Side { WHITE, BLACK, ALL };
 enum Castling { WKS = 0b0001, WQS = 0b0010, BKS = 0b0100, BQS = 0b1000 };
-enum Piece { WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK };
+enum Piece { WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK, INVALID_PIECE };
 
 // clang-format off
 static const char* const squares[65] = {
