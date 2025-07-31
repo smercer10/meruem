@@ -1,23 +1,28 @@
 #include <assert.h>
+#include <string.h>
 #include <uci.h>
 
+#include "fen.h"
 #include "globals.h"
 #include "movegen.h"
 #include "state.h"
 
-Move parse_move(State *state, const char *move) {
+Move parse_move(State *state, const char *move, int *consumed) {
     assert(state != nullptr);
     assert(move != nullptr);
     assert(move[0] >= 'a' && move[0] <= 'h');
     assert(move[1] >= '1' && move[1] <= '8');
     assert(move[2] >= 'a' && move[2] <= 'h');
     assert(move[3] >= '1' && move[3] <= '8');
+    assert(consumed != nullptr);
 
     int source_sq = move[0] - 'a' + (move[1] - '1') * 8;
     int target_sq = move[2] - 'a' + (move[3] - '1') * 8;
-    int promoted_piece = INVALID_PIECE;
+    *consumed = 4;
 
-    if (move[4] != '\0') {
+    int promoted_piece = INVALID_PIECE;
+    if (move[4] != '\0' && move[4] != ' ') {  // Need to check spaces in case there are multiple moves in the string
+        ++(*consumed);
         switch (move[4]) {
             case 'q':
                 promoted_piece = state->packed.side == WHITE ? WQ : BQ;
@@ -45,4 +50,31 @@ Move parse_move(State *state, const char *move) {
     }
 
     return (Move){.is_invalid = 1};
+}
+
+void parse_position(State *state, const char *command) {
+    assert(state != nullptr);
+    assert(command != nullptr);
+
+    command += 9;  // Skip "position " command
+    if (strncmp(command, "startpos", 8) == 0) {
+        parse_fen(START_POSITION, state);
+    } else {
+        command += 4;  // Skip "fen " command
+        parse_fen(command, state);
+    }
+
+    const char *moves = strstr(command, "moves");
+    if (moves != nullptr) {
+        moves += 6;  // Skip "moves " command
+        while (*moves != '\0') {
+            while (*moves == ' ') ++moves;  // Skip spaces
+            if (*moves == '\0') break;      // Accounts for trailing spaces
+            int consumed = 0;
+            Move move = parse_move(state, moves, &consumed);
+            if (move.is_invalid) break;
+            make_move(state, move, ALL_MOVES);
+            moves += consumed;
+        }
+    }
 }
