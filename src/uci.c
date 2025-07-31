@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <uci.h>
 
@@ -77,4 +78,20 @@ void parse_position(State *state, const char *command) {
             moves += consumed;
         }
     }
+}
+
+void parse_go(const char *command) {
+    assert(command != nullptr);
+
+    int depth = -1;
+
+    command += 3;  // Skip "go "
+    if (strncmp(command, "depth ", 6) == 0) {
+        command += 6;  // Skip "depth "
+        depth = atoi(command);
+    }
+
+    (void)depth;  // Silence unused variable warning for now
+
+    // TODO: Call search function
 }

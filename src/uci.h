@@ -4,4 +4,7 @@
 #include "state.h"
 
 Move parse_move(State *state, const char *move, int *consumed);
-void parse_position(State *state, const char *command);  // Assumes command is well-formed
+
+// Assumes command is well-formed
+void parse_position(State *state, const char *command);
+void parse_go(const char *command);
