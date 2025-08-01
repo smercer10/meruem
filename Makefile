@@ -59,9 +59,12 @@ test: $(TEST_BIN)
 compile_commands: clean
 	bear -- $(MAKE) $(BIN) $(TEST_BIN)
 
+check_formatting:
+	find src tests -name "*.c" -o -name "*.h" | xargs clang-format --dry-run --Werror
+
 clean:
 	rm -rf $(BUILD_DIR)
 
 -include $(DEPS) $(TEST_DEPS)
 
-.PHONY: all test compile_commands clean
+.PHONY: all test compile_commands check_formatting clean
