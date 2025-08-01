@@ -8,7 +8,7 @@ TEST_DIR := tests
 THIRD_PARTY_DIR := third_party
 
 BIN := $(BUILD_DIR)/meruem_$(BUILD_TYPE)
-TEST_BIN := $(BUILD_DIR)/test_meruem
+TEST_BIN := $(BUILD_DIR)/test_meruem_$(BUILD_TYPE)
 
 CC := gcc
 CPPFLAGS := -I$(SRC_DIR) -MMD -MP
