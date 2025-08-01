@@ -12,7 +12,7 @@ TEST_BIN := $(BUILD_DIR)/test_meruem_$(BUILD_TYPE)
 
 CC := gcc
 CPPFLAGS := -I$(SRC_DIR) -MMD -MP
-CFLAGS := -std=c23 -Wall -Wextra -Werror -Wpedantic -Wconversion
+CFLAGS := -std=c2x -Wall -Wextra -Werror -Wpedantic -Wconversion
 
 ifeq ($(BUILD_TYPE),release)
 	CFLAGS += -O3 -DNDEBUG
