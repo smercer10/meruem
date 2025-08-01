@@ -5,7 +5,7 @@
 #include "state.h"
 #include "uci.h"
 
-int main() {
+int main(void) {
     init_slider_attack_tables();
 
     State state = {0};
