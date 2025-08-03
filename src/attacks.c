@@ -19,11 +19,12 @@ bool is_sq_attacked(const State* restrict state, int sq, int attacking_side) {
     if (king_attacks[sq] & state->pieces[WK + idx_offset]) return true;
     if (pawn_attacks[!attacking_side][sq] & state->pieces[WP + idx_offset]) return true;
 
-    if (get_bishop_attacks(sq, state->occupancy[ALL]) &
+    if (get_bishop_attacks(sq, state->occupancy[BOTH_SIDES]) &
         (state->pieces[WB + idx_offset] | state->pieces[WQ + idx_offset]))
         return true;
 
-    if (get_rook_attacks(sq, state->occupancy[ALL]) & (state->pieces[WR + idx_offset] | state->pieces[WQ + idx_offset]))
+    if (get_rook_attacks(sq, state->occupancy[BOTH_SIDES]) &
+        (state->pieces[WR + idx_offset] | state->pieces[WQ + idx_offset]))
         return true;
 
     return false;

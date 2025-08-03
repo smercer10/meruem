@@ -13,7 +13,7 @@ enum Square {
 };
 // clang-format on
 
-enum Side { WHITE, BLACK, ALL };
+enum Side { WHITE, BLACK, BOTH_SIDES };
 enum Castling { WKS = 0b0001, WQS = 0b0010, BKS = 0b0100, BQS = 0b1000 };
 enum Piece { WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK, INVALID_PIECE };
 

@@ -67,7 +67,7 @@ void parse_fen(State* restrict state, const char* restrict fen) {
                 if (piece != INVALID_PIECE) {
                     const int sq = (r * 8) + f;
                     set_bit(&state->pieces[piece], sq);
-                    set_bit(&state->occupancy[ALL], sq);
+                    set_bit(&state->occupancy[BOTH_SIDES], sq);
                     set_bit(&state->occupancy[piece < BP ? WHITE : BLACK], sq);
                 }
             }
