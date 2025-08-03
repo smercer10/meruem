@@ -18,7 +18,7 @@ void print_state(const State* state) {
             const int sq = r * 8 + f;
             int piece = -1;
             for (int p = 0; p < 12; ++p) {
-                if (is_set(state->pieces[p], sq)) {
+                if (is_bit_set(state->pieces[p], sq)) {
                     piece = p;
                     break;
                 }

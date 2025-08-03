@@ -88,7 +88,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         while (bb) {
             source_sq = pop_lsb(&bb);
             if (source_sq <= H7) {
-                if (!is_set(state->occupancy[ALL], source_sq + 8)) {  // One forward
+                if (!is_bit_set(state->occupancy[ALL], source_sq + 8)) {  // One forward
                     target_sq = source_sq + 8;
                     if (target_sq >= A8) {  // Promotion
                         add_move(move_list, encode_move(source_sq, target_sq, WP, WQ, false, false, false, false));
@@ -98,7 +98,7 @@ void generate_moves(const State* state, MoveList* move_list) {
                     } else {
                         add_move(move_list, encode_move(source_sq, target_sq, WP, -1, false, false, false, false));
                     }
-                    if (source_sq <= H2 && !is_set(state->occupancy[ALL], source_sq + 16)) {  // Double push
+                    if (source_sq <= H2 && !is_bit_set(state->occupancy[ALL], source_sq + 16)) {  // Double push
                         target_sq = source_sq + 16;
                         add_move(move_list, encode_move(source_sq, target_sq, WP, -1, false, true, false, false));
                     }
@@ -129,15 +129,15 @@ void generate_moves(const State* state, MoveList* move_list) {
         // Castling moves
         // King-side
         if ((state->packed.castling & WKS)  // Implies king and rook are on their original squaresS
-            && !is_set(state->occupancy[ALL], F1) && !is_set(state->occupancy[ALL], G1) &&
+            && !is_bit_set(state->occupancy[ALL], F1) && !is_bit_set(state->occupancy[ALL], G1) &&
             !is_sq_attacked(state, E1, BLACK) &&
             !is_sq_attacked(state, F1, BLACK)) {  // Check if G1 is under attack later
             add_move(move_list, encode_move(E1, G1, WK, -1, false, false, false, true));
         }
         // Queen-side
         if ((state->packed.castling & WQS) &&  // Implies king and rook are on their original squares
-            !is_set(state->occupancy[ALL], D1) && !is_set(state->occupancy[ALL], C1) &&
-            !is_set(state->occupancy[ALL], B1) && !is_sq_attacked(state, E1, BLACK) &&
+            !is_bit_set(state->occupancy[ALL], D1) && !is_bit_set(state->occupancy[ALL], C1) &&
+            !is_bit_set(state->occupancy[ALL], B1) && !is_sq_attacked(state, E1, BLACK) &&
             !is_sq_attacked(state, D1, BLACK)) {  // Check if C1 is under attack later
             add_move(move_list, encode_move(E1, C1, WK, -1, false, false, false, true));
         }
@@ -147,7 +147,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         while (bb) {
             source_sq = pop_lsb(&bb);
             if (source_sq >= A2) {
-                if (!is_set(state->occupancy[ALL], source_sq - 8)) {  // One forward
+                if (!is_bit_set(state->occupancy[ALL], source_sq - 8)) {  // One forward
                     target_sq = source_sq - 8;
                     if (target_sq <= H1) {  // Promotion
                         add_move(move_list, encode_move(source_sq, target_sq, BP, BQ, false, false, false, false));
@@ -157,7 +157,7 @@ void generate_moves(const State* state, MoveList* move_list) {
                     } else {
                         add_move(move_list, encode_move(source_sq, target_sq, BP, -1, false, false, false, false));
                     }
-                    if (source_sq >= A7 && !is_set(state->occupancy[ALL], source_sq - 16)) {  // Double push
+                    if (source_sq >= A7 && !is_bit_set(state->occupancy[ALL], source_sq - 16)) {  // Double push
                         target_sq = source_sq - 16;
                         add_move(move_list, encode_move(source_sq, target_sq, BP, -1, false, true, false, false));
                     }
@@ -188,15 +188,15 @@ void generate_moves(const State* state, MoveList* move_list) {
         // Castling moves
         // King-side
         if ((state->packed.castling & BKS) &&  // Implies king and rook are on their original squares
-            !is_set(state->occupancy[ALL], F8) && !is_set(state->occupancy[ALL], G8) &&
+            !is_bit_set(state->occupancy[ALL], F8) && !is_bit_set(state->occupancy[ALL], G8) &&
             !is_sq_attacked(state, E8, WHITE) &&
             !is_sq_attacked(state, F8, WHITE)) {  // Check if G8 is under attack later
             add_move(move_list, encode_move(E8, G8, BK, -1, false, false, false, true));
         }
         // Queen-side
         if ((state->packed.castling & BQS) &&  // Implies king and rook are on their original squares
-            !is_set(state->occupancy[ALL], D8) && !is_set(state->occupancy[ALL], C8) &&
-            !is_set(state->occupancy[ALL], B8) && !is_sq_attacked(state, E8, WHITE) &&
+            !is_bit_set(state->occupancy[ALL], D8) && !is_bit_set(state->occupancy[ALL], C8) &&
+            !is_bit_set(state->occupancy[ALL], B8) && !is_sq_attacked(state, E8, WHITE) &&
             !is_sq_attacked(state, D8, WHITE)) {  // Check if C8 is under attack later
             add_move(move_list, encode_move(E8, C8, BK, -1, false, false, false, true));
         }
@@ -209,7 +209,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         attacks = knight_attacks[source_sq] & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
-            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
             } else {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
@@ -224,7 +224,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         attacks = get_bishop_attacks(source_sq, state->occupancy[ALL]) & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
-            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
             } else {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
@@ -239,7 +239,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         attacks = get_rook_attacks(source_sq, state->occupancy[ALL]) & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
-            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
             } else {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
@@ -254,7 +254,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         attacks = get_queen_attacks(source_sq, state->occupancy[ALL]) & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
-            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
             } else {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
@@ -269,7 +269,7 @@ void generate_moves(const State* state, MoveList* move_list) {
         attacks = king_attacks[source_sq] & ~state->occupancy[state->packed.side];
         while (attacks) {
             target_sq = pop_lsb(&attacks);
-            if (is_set(state->occupancy[!state->packed.side], target_sq)) {
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
             } else {
                 add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
@@ -310,7 +310,7 @@ bool make_move(State* state, Move move, int move_type) {
         if (move.is_capture) {
             int piece_idx_start = (state->packed.side == WHITE) ? 6 : 0;  // Opponent's pieces
             for (int i = piece_idx_start; i < piece_idx_start + 6; ++i) {
-                if (is_set(state->pieces[i], move.target_sq)) {
+                if (is_bit_set(state->pieces[i], move.target_sq)) {
                     clear_bit(&state->pieces[i], move.target_sq);
                     break;
                 }
