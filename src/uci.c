@@ -61,10 +61,10 @@ void parse_position(State *state, const char *command) {
 
     command += 9;  // Skip "position " command
     if (strncmp(command, "startpos", 8) == 0) {
-        parse_fen(START_POSITION, state);
+        parse_fen(state, START_POSITION);
     } else {
         command += 4;  // Skip "fen " command
-        parse_fen(command, state);
+        parse_fen(state, command);
     }
 
     const char *moves = strstr(command, "moves");

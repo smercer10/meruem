@@ -2,7 +2,7 @@
 
 #include "state.h"
 
-void parse_fen(const char* fen, State* state);  // Assumes FEN is well-formed
+void parse_fen(State* restrict state, const char* restrict fen);  // Assumes FEN is well-formed
 
 // Useful FENs
 #define EMPTY_BOARD "8/8/8/8/8/8/8/8 w - - "

@@ -35,18 +35,18 @@ static int char_to_piece(char c) {
         case 'k':
             return BK;
         default:
-            return -1;
+            return INVALID_PIECE;
     }
 }
 
-static int parse_square(const char* str) {
+static int parse_sq(const char* restrict str) {
     assert(str != nullptr);
-    if (str[0] < 'a' || str[0] > 'h' || str[1] < '1' || str[1] > '8') return NA;
-    return (str[1] - '1') * 8 + (str[0] - 'a');
+    if (str[0] < 'a' || str[0] > 'h' || str[1] < '1' || str[1] > '8') return INVALID_SQ;
+    return ((str[1] - '1') * 8) + (str[0] - 'a');
 }
 
-void parse_fen(const char* fen, State* state) {
-    assert(fen != nullptr && state != nullptr);
+void parse_fen(State* restrict state, const char* restrict fen) {
+    assert(state != nullptr && fen != nullptr);
 
     // Reset bitboards
     for (int i = 0; i < 12; ++i) {
@@ -64,15 +64,15 @@ void parse_fen(const char* fen, State* state) {
                 f += c - '0' - 1;  // -1 because f will be incremented in the loop
             } else {
                 const int piece = char_to_piece(c);
-                if (piece >= 0) {
-                    const int sq = r * 8 + f;
+                if (piece != INVALID_PIECE) {
+                    const int sq = (r * 8) + f;
                     set_bit(&state->pieces[piece], sq);
                     set_bit(&state->occupancy[ALL], sq);
-                    set_bit(&state->occupancy[piece < 6 ? WHITE : BLACK], sq);
+                    set_bit(&state->occupancy[piece < BP ? WHITE : BLACK], sq);
                 }
             }
         }
-        if (r > 0) ++fen;  // Skip the rank separators ('/'), doesn't apply to the last rank
+        if (r > 0) ++fen;  // Skip the rank separators (doesn't apply to the last rank)
     }
 
     while (*fen == ' ') ++fen;  // Skip space
@@ -112,10 +112,10 @@ void parse_fen(const char* fen, State* state) {
 #pragma GCC diagnostic ignored "-Wconversion"
     // Parse en passant square
     if (*fen == '-') {
-        state->packed.en_passant = NA;
+        state->packed.en_passant = INVALID_SQ;
         ++fen;
     } else {
-        state->packed.en_passant = parse_square(fen);
+        state->packed.en_passant = parse_sq(fen);
         fen += 2;
     }
 
@@ -134,8 +134,6 @@ void parse_fen(const char* fen, State* state) {
     while (isdigit(*fen) && state->packed.fullmove < 4095) {  // Make sure it fits in 12 bits
         state->packed.fullmove = (state->packed.fullmove * 10 + (*fen++ - '0'));
     }
-    if (state->packed.fullmove < 1) {
-        state->packed.fullmove = 1;  // Ensure fullmove is at least 1
-    }
+    if (state->packed.fullmove < 1) state->packed.fullmove = 1;  // Ensure fullmove is at least 1
 #pragma GCC diagnostic pop
 }

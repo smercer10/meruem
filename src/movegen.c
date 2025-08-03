@@ -79,8 +79,8 @@ void generate_moves(const State* state, MoveList* move_list) {
 
     uint64_t bb = 0;
     uint64_t attacks = 0;
-    int source_sq = NA;
-    int target_sq = NA;
+    int source_sq = INVALID_SQ;
+    int target_sq = INVALID_SQ;
 
     if (state->packed.side == WHITE) {
         // Pawn moves
@@ -118,7 +118,7 @@ void generate_moves(const State* state, MoveList* move_list) {
                 }
                 // En passant
                 const int ep_sq = state->packed.en_passant;
-                if (ep_sq != NA) {
+                if (ep_sq != INVALID_SQ) {
                     if (pawn_attacks[WHITE][source_sq] & (UINT64_C(1) << ep_sq)) {
                         target_sq = ep_sq;
                         add_move(move_list, encode_move(source_sq, target_sq, WP, -1, true, false, true, false));
@@ -177,7 +177,7 @@ void generate_moves(const State* state, MoveList* move_list) {
                 }
                 // En passant
                 const int ep_sq = state->packed.en_passant;
-                if (ep_sq != NA) {
+                if (ep_sq != INVALID_SQ) {
                     if (pawn_attacks[BLACK][source_sq] & (UINT64_C(1) << ep_sq)) {
                         target_sq = ep_sq;
                         add_move(move_list, encode_move(source_sq, target_sq, BP, -1, true, false, true, false));
@@ -330,7 +330,7 @@ bool make_move(State* state, Move move, int move_type) {
             }
         }
 
-        state->packed.en_passant = NA;
+        state->packed.en_passant = INVALID_SQ;
         if (move.is_double_push) {
             if (state->packed.side == WHITE) {
                 state->packed.en_passant = move.target_sq - 8;
