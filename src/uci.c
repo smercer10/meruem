@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <uci.h>
@@ -6,6 +7,7 @@
 #include "fen.h"
 #include "globals.h"
 #include "movegen.h"
+#include "search.h"
 #include "state.h"
 
 Move parse_move(State *state, const char *move, int *consumed) {
@@ -80,10 +82,11 @@ void parse_position(State *state, const char *command) {
     }
 }
 
-void parse_go(const char *command) {
+void parse_go(State *state, const char *command) {
+    assert(state != nullptr);
     assert(command != nullptr);
 
-    int depth = -1;
+    int depth = 0;
 
     command += 3;  // Skip "go "
     if (strncmp(command, "depth ", 6) == 0) {
@@ -91,7 +94,33 @@ void parse_go(const char *command) {
         depth = atoi(command);
     }
 
-    (void)depth;  // Silence unused variable warning for now
+    search_position(state, depth);
+}
 
-    // TODO: Call search function
+void start_uci_loop(State *state) {
+    assert(state != nullptr);
+
+    setbuf(stdout, NULL);  // Ensure stdout is unbuffered for immediate output
+
+    char command[256];
+
+    while (fgets(command, sizeof(command), stdin)) {
+        command[strcspn(command, "\n")] = '\0';  // Remove trailing newline
+
+        if (strcmp(command, "ucinewgame") == 0) {
+            parse_position(state, "position startpos");
+        } else if (strcmp(command, "uci") == 0) {
+            puts("id name Meruem");
+            puts("id author smercer10");
+            puts("uciok");
+        } else if (strcmp(command, "isready") == 0) {
+            puts("readyok");
+        } else if (strncmp(command, "position ", 9) == 0) {
+            parse_position(state, command);
+        } else if (strncmp(command, "go ", 3) == 0) {
+            parse_go(state, command);
+        } else if (strcmp(command, "quit") == 0) {
+            break;
+        }
+    }
 }
