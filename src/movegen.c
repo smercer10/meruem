@@ -130,14 +130,15 @@ void generate_moves(const State* state, MoveList* move_list) {
         // King-side
         if ((state->packed.castling & WKS)  // Implies king and rook are on their original squaresS
             && !is_set(state->occupancy[ALL], F1) && !is_set(state->occupancy[ALL], G1) &&
-            !is_attacked(E1, BLACK, state) && !is_attacked(F1, BLACK, state)) {  // Check if G1 is under attack later
+            !is_sq_attacked(state, E1, BLACK) &&
+            !is_sq_attacked(state, F1, BLACK)) {  // Check if G1 is under attack later
             add_move(move_list, encode_move(E1, G1, WK, -1, false, false, false, true));
         }
         // Queen-side
         if ((state->packed.castling & WQS) &&  // Implies king and rook are on their original squares
             !is_set(state->occupancy[ALL], D1) && !is_set(state->occupancy[ALL], C1) &&
-            !is_set(state->occupancy[ALL], B1) && !is_attacked(E1, BLACK, state) &&
-            !is_attacked(D1, BLACK, state)) {  // Check if C1 is under attack later
+            !is_set(state->occupancy[ALL], B1) && !is_sq_attacked(state, E1, BLACK) &&
+            !is_sq_attacked(state, D1, BLACK)) {  // Check if C1 is under attack later
             add_move(move_list, encode_move(E1, C1, WK, -1, false, false, false, true));
         }
     } else {
@@ -188,14 +189,15 @@ void generate_moves(const State* state, MoveList* move_list) {
         // King-side
         if ((state->packed.castling & BKS) &&  // Implies king and rook are on their original squares
             !is_set(state->occupancy[ALL], F8) && !is_set(state->occupancy[ALL], G8) &&
-            !is_attacked(E8, WHITE, state) && !is_attacked(F8, WHITE, state)) {  // Check if G8 is under attack later
+            !is_sq_attacked(state, E8, WHITE) &&
+            !is_sq_attacked(state, F8, WHITE)) {  // Check if G8 is under attack later
             add_move(move_list, encode_move(E8, G8, BK, -1, false, false, false, true));
         }
         // Queen-side
         if ((state->packed.castling & BQS) &&  // Implies king and rook are on their original squares
             !is_set(state->occupancy[ALL], D8) && !is_set(state->occupancy[ALL], C8) &&
-            !is_set(state->occupancy[ALL], B8) && !is_attacked(E8, WHITE, state) &&
-            !is_attacked(D8, WHITE, state)) {  // Check if C8 is under attack later
+            !is_set(state->occupancy[ALL], B8) && !is_sq_attacked(state, E8, WHITE) &&
+            !is_sq_attacked(state, D8, WHITE)) {  // Check if C8 is under attack later
             add_move(move_list, encode_move(E8, C8, BK, -1, false, false, false, true));
         }
     }
@@ -372,7 +374,7 @@ bool make_move(State* state, Move move, int move_type) {
                                    state->pieces[BQ] | state->pieces[BK];
         state->occupancy[ALL] = state->occupancy[WHITE] | state->occupancy[BLACK];
 
-        if (is_attacked(get_lsb(state->pieces[WK + (6 * state->packed.side)]), !state->packed.side, state)) {
+        if (is_sq_attacked(state, get_lsb(state->pieces[WK + (6 * state->packed.side)]), !state->packed.side)) {
             *state = backup;
             return false;
         }

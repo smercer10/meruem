@@ -2,4 +2,4 @@
 
 #include "state.h"
 
-bool is_attacked(int sq, int attacking_side, const State* state);
+bool is_sq_attacked(const State* restrict state, int sq, int attacking_side);
