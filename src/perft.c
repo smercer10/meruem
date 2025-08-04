@@ -11,7 +11,7 @@ long perft(State* state, int depth) {
     if (depth == 0) return 1;
 
     MoveList move_list;
-    generate_moves(state, &move_list);
+    gen_pseudo_legal_moves(state, &move_list);
 
     long nodes = 0;
     for (int i = 0; i < move_list.count; ++i) {

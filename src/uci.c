@@ -45,7 +45,7 @@ Move parse_move(State *state, const char *move, int *consumed) {
     }
 
     MoveList move_list;
-    generate_moves(state, &move_list);
+    gen_pseudo_legal_moves(state, &move_list);
 
     for (int i = 0; i < move_list.count; ++i) {
         Move m = move_list.moves[i];

@@ -2,9 +2,12 @@
 
 #include <stdint.h>
 
+static constexpr int NUM_PIECES = 12;
+static constexpr int NUM_OCCUPANCIES = 3;
+
 typedef struct {
-    uint64_t pieces[12];
-    uint64_t occupancy[3];
+    uint64_t pieces[NUM_PIECES];
+    uint64_t occupancy[NUM_OCCUPANCIES];
     uint64_t zobrist_hash;
     union {
         uint32_t raw;
@@ -18,6 +21,6 @@ typedef struct {
     } packed;
 } State;
 
-static constexpr char ascii_pieces[12] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};
+static constexpr char ascii_pieces[NUM_PIECES] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};
 
 void print_state(const State* state);

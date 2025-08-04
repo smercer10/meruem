@@ -8,274 +8,185 @@
 #include "attacks.h"
 #include "bitboard.h"
 #include "globals.h"
-#include "leapers.h"
-#include "sliders.h"
 #include "state.h"
 
-Move encode_move(int source_sq, int target_sq, int moved_piece, int promoted_piece, bool is_capture,
-                 bool is_double_push, bool is_en_passant, bool is_castling) {
-    assert(source_sq >= 0 && source_sq < 64);
-    assert(target_sq >= 0 && target_sq < 64);
-    assert(moved_piece >= 0 && moved_piece < 12);
-    assert(promoted_piece < 12);
-
-    if (promoted_piece < 0) promoted_piece = INVALID_PIECE;  // No promotion
+static inline Move encode_move(int source_sq, int target_sq, int moved_piece, int promoted_piece, bool is_capture,
+                               bool is_double_push, bool is_en_passant, bool is_castling) {
+    assert(source_sq >= A1 && source_sq <= H8);
+    assert(target_sq >= A1 && target_sq <= H8);
+    assert(moved_piece >= WP && moved_piece <= BK);
+    assert(promoted_piece >= WN && promoted_piece <= INVALID_PIECE);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-    Move move = {.source_sq = (uint32_t)source_sq,
-                 .target_sq = (uint32_t)target_sq,
-                 .moved_piece = (uint32_t)moved_piece,
-                 .promoted_piece = (uint32_t)promoted_piece,
-                 .is_capture = is_capture,
-                 .is_double_push = is_double_push,
-                 .is_en_passant = is_en_passant,
-                 .is_castling = is_castling,
-                 .unused = 0};
+    return (Move){.source_sq = (uint32_t)source_sq,
+                  .target_sq = (uint32_t)target_sq,
+                  .moved_piece = (uint32_t)moved_piece,
+                  .promoted_piece = (uint32_t)promoted_piece,
+                  .is_capture = is_capture,
+                  .is_double_push = is_double_push,
+                  .is_en_passant = is_en_passant,
+                  .is_castling = is_castling,
+                  .is_invalid = false,
+                  .unused = 0};
 #pragma GCC diagnostic pop
-
-    return move;
 }
 
-int get_source_sq(Move move) { return move.source_sq; }
-int get_target_sq(Move move) { return move.target_sq; }
-int get_moved_piece(Move move) { return move.moved_piece; }
-int get_promoted_piece(Move move) { return move.promoted_piece; }
-bool is_capture(Move move) { return move.is_capture; }
-bool is_double_push(Move move) { return move.is_double_push; }
-bool is_en_passant(Move move) { return move.is_en_passant; }
-bool is_castling(Move move) { return move.is_castling; }
-
-void add_move(MoveList* move_list, Move move) {
+static inline void add_move(MoveList* restrict move_list, Move move) {
     assert(move_list != nullptr);
-    assert(move_list->count < 256);
+    assert(move_list->count < MAX_MOVES);
     move_list->moves[move_list->count++] = move;
 }
 
-void print_move(Move move) {
-    printf("%s%s", squares[move.source_sq], squares[move.target_sq]);
-    if (move.promoted_piece < 12) {
-        printf("%c", promotion_pieces[move.promoted_piece]);
-    }
+static inline bool is_sq_attacked(const State* restrict state, int sq, int attacking_side) {
+    assert(state != nullptr);
+    assert(sq >= A1 && sq <= H8);
+    assert(attacking_side == WHITE || attacking_side == BLACK);
+
+    const int idx_offset = ((attacking_side == WHITE) ? 0 : 6);
+
+    if (knight_attacks[sq] & state->pieces[WN + idx_offset]) return true;
+    if (king_attacks[sq] & state->pieces[WK + idx_offset]) return true;
+    if (pawn_attacks[!attacking_side][sq] & state->pieces[WP + idx_offset]) return true;
+
+    if (get_bishop_attacks(sq, state->occupancy[BOTH_SIDES]) &
+        (state->pieces[WB + idx_offset] | state->pieces[WQ + idx_offset]))
+        return true;
+
+    if (get_rook_attacks(sq, state->occupancy[BOTH_SIDES]) &
+        (state->pieces[WR + idx_offset] | state->pieces[WQ + idx_offset]))
+        return true;
+
+    return false;
 }
 
-void print_move_list(const MoveList* move_list) {
+static inline void add_pawn_promotion_moves(MoveList* restrict move_list, int source_sq, int target_sq, int pawn_type,
+                                            bool is_capture) {
     assert(move_list != nullptr);
-    for (int i = 0; i < move_list->count; ++i) {
-        printf("%d: ", i + 1);
-        print_move(move_list->moves[i]);
-        printf(",%c,%c,%c,%c,%c\n", ascii_pieces[get_moved_piece(move_list->moves[i])],
-               is_capture(move_list->moves[i]) ? 'y' : 'n', is_double_push(move_list->moves[i]) ? 'y' : 'n',
-               is_en_passant(move_list->moves[i]) ? 'y' : 'n', is_castling(move_list->moves[i]) ? 'y' : 'n');
-    }
-    printf("\nTotal moves: %d\n", move_list->count);
+    assert(source_sq >= A1 && source_sq <= H8);
+    assert(target_sq >= A1 && target_sq <= H8);
+    assert(pawn_type == WP || pawn_type == BP);
+
+    // Pawn values can be directly used as the index offset
+    add_move(move_list, encode_move(source_sq, target_sq, pawn_type, WQ + pawn_type, is_capture, false, false, false));
+    add_move(move_list, encode_move(source_sq, target_sq, pawn_type, WR + pawn_type, is_capture, false, false, false));
+    add_move(move_list, encode_move(source_sq, target_sq, pawn_type, WB + pawn_type, is_capture, false, false, false));
+    add_move(move_list, encode_move(source_sq, target_sq, pawn_type, WN + pawn_type, is_capture, false, false, false));
 }
 
-// TODO: Refactor this to reduce code duplication and improve performance
-void generate_moves(const State* state, MoveList* move_list) {
+// Assume square is valid
+static inline bool sq_in_last_rank(int sq, int side) { return (side == WHITE) ? (sq >= A8) : (sq <= H1); }
+static inline bool sq_in_last_two_ranks(int sq, int side) { return (side == WHITE) ? (sq >= A7) : (sq <= H2); }
+static inline bool pawn_hasnt_moved(int sq, int side) { return sq_in_last_two_ranks(sq, !side); }
+
+static inline void add_pawn_moves(const State* restrict state, MoveList* restrict move_list, int pawn_type) {
+    assert(state != nullptr && move_list != nullptr);
+    assert(pawn_type == WP || pawn_type == BP);
+
+    const int forward_jump = (pawn_type == WP) ? 8 : -8;
+
+    uint64_t pawn = state->pieces[pawn_type];
+    while (pawn) {
+        const int source_sq = pop_lsb(&pawn);
+        if (!sq_in_last_rank(source_sq, state->packed.side)) {
+            const int target_sq = source_sq + forward_jump;
+            if (!is_bit_set(state->occupancy[BOTH_SIDES], target_sq)) {
+                if (sq_in_last_rank(target_sq, state->packed.side)) {
+                    add_pawn_promotion_moves(move_list, source_sq, target_sq, pawn_type, false);
+                } else {
+                    add_move(move_list,
+                             encode_move(source_sq, target_sq, pawn_type, INVALID_PIECE, false, false, false, false));
+                }
+                if (pawn_hasnt_moved(source_sq, state->packed.side) &&
+                    !is_bit_set(state->occupancy[BOTH_SIDES], target_sq + forward_jump)) {
+                    add_move(move_list, encode_move(source_sq, target_sq + forward_jump, pawn_type, INVALID_PIECE,
+                                                    false, true, false, false));
+                }
+            }
+        }
+        uint64_t attacks = pawn_attacks[state->packed.side][source_sq] & state->occupancy[!state->packed.side];
+        while (attacks) {
+            const int target_sq = pop_lsb(&attacks);
+            if (sq_in_last_rank(target_sq, state->packed.side)) {
+                add_pawn_promotion_moves(move_list, source_sq, target_sq, pawn_type, true);
+            } else {
+                add_move(move_list,
+                         encode_move(source_sq, target_sq, pawn_type, INVALID_PIECE, true, false, false, false));
+            }
+        }
+        if (state->packed.en_passant != INVALID_SQ) {
+            if (pawn_attacks[state->packed.side][source_sq] & (UINT64_C(1) << state->packed.en_passant)) {
+                add_move(move_list, encode_move(source_sq, state->packed.en_passant, pawn_type, INVALID_PIECE, true,
+                                                false, true, false));
+            }
+        }
+    }
+}
+
+static inline void add_castling_moves(const State* restrict state, MoveList* restrict move_list) {
+    assert(state != nullptr && move_list != nullptr);
+
+    if (state->packed.side == WHITE) {
+        if ((state->packed.castling & WKS) && !is_bit_set(state->occupancy[BOTH_SIDES], F1) &&
+            !is_bit_set(state->occupancy[BOTH_SIDES], G1) && !is_sq_attacked(state, E1, BLACK) &&
+            !is_sq_attacked(state, F1, BLACK)) {
+            add_move(move_list, encode_move(E1, G1, WK, INVALID_PIECE, false, false, false, true));
+        }
+        if ((state->packed.castling & WQS) && !is_bit_set(state->occupancy[BOTH_SIDES], D1) &&
+            !is_bit_set(state->occupancy[BOTH_SIDES], C1) && !is_bit_set(state->occupancy[BOTH_SIDES], B1) &&
+            !is_sq_attacked(state, E1, BLACK) && !is_sq_attacked(state, D1, BLACK)) {
+            add_move(move_list, encode_move(E1, C1, WK, INVALID_PIECE, false, false, false, true));
+        }
+    } else {
+        if ((state->packed.castling & BKS) && !is_bit_set(state->occupancy[BOTH_SIDES], F8) &&
+            !is_bit_set(state->occupancy[BOTH_SIDES], G8) && !is_sq_attacked(state, E8, WHITE) &&
+            !is_sq_attacked(state, F8, WHITE)) {
+            add_move(move_list, encode_move(E8, G8, BK, INVALID_PIECE, false, false, false, true));
+        }
+        if ((state->packed.castling & BQS) && !is_bit_set(state->occupancy[BOTH_SIDES], D8) &&
+            !is_bit_set(state->occupancy[BOTH_SIDES], C8) && !is_bit_set(state->occupancy[BOTH_SIDES], B8) &&
+            !is_sq_attacked(state, E8, WHITE) && !is_sq_attacked(state, D8, WHITE)) {
+            add_move(move_list, encode_move(E8, C8, BK, INVALID_PIECE, false, false, false, true));
+        }
+    }
+}
+
+static inline void add_generic_piece_moves(const State* restrict state, MoveList* restrict move_list,
+                                           uint64_t (*attacks_func)(int, uint64_t), int piece_type) {
+    assert(state != nullptr && move_list != nullptr && attacks_func != nullptr);
+    assert(piece_type >= WN && piece_type <= BK);
+
+    uint64_t piece = state->pieces[piece_type];
+    while (piece) {
+        const int source_sq = pop_lsb(&piece);
+        uint64_t attacks =
+            attacks_func(source_sq, state->occupancy[BOTH_SIDES]) & ~state->occupancy[state->packed.side];
+        while (attacks) {
+            const int target_sq = pop_lsb(&attacks);
+            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
+                add_move(move_list,
+                         encode_move(source_sq, target_sq, piece_type, INVALID_PIECE, true, false, false, false));
+            } else {
+                add_move(move_list,
+                         encode_move(source_sq, target_sq, piece_type, INVALID_PIECE, false, false, false, false));
+            }
+        }
+    }
+}
+
+void gen_pseudo_legal_moves(const State* restrict state, MoveList* restrict move_list) {
     assert(state != nullptr && move_list != nullptr);
 
     move_list->count = 0;
 
-    uint64_t bb = 0;
-    uint64_t attacks = 0;
-    int source_sq = INVALID_SQ;
-    int target_sq = INVALID_SQ;
-
-    if (state->packed.side == WHITE) {
-        // Pawn moves
-        bb = state->pieces[WP];
-        while (bb) {
-            source_sq = pop_lsb(&bb);
-            if (source_sq <= H7) {
-                if (!is_bit_set(state->occupancy[BOTH_SIDES], source_sq + 8)) {  // One forward
-                    target_sq = source_sq + 8;
-                    if (target_sq >= A8) {  // Promotion
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WQ, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WR, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WB, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WN, false, false, false, false));
-                    } else {
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, -1, false, false, false, false));
-                    }
-                    if (source_sq <= H2 && !is_bit_set(state->occupancy[BOTH_SIDES], source_sq + 16)) {  // Double push
-                        target_sq = source_sq + 16;
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, -1, false, true, false, false));
-                    }
-                }
-                // Normal captures
-                attacks = pawn_attacks[WHITE][source_sq] & state->occupancy[BLACK];
-                while (attacks) {
-                    target_sq = pop_lsb(&attacks);
-                    if (target_sq >= A8) {  // Promotion
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WQ, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WR, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WB, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, WN, true, false, false, false));
-                    } else {
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, -1, true, false, false, false));
-                    }
-                }
-                // En passant
-                const int ep_sq = state->packed.en_passant;
-                if (ep_sq != INVALID_SQ) {
-                    if (pawn_attacks[WHITE][source_sq] & (UINT64_C(1) << ep_sq)) {
-                        target_sq = ep_sq;
-                        add_move(move_list, encode_move(source_sq, target_sq, WP, -1, true, false, true, false));
-                    }
-                }
-            }
-        }
-        // Castling moves
-        // King-side
-        if ((state->packed.castling & WKS)  // Implies king and rook are on their original squaresS
-            && !is_bit_set(state->occupancy[BOTH_SIDES], F1) && !is_bit_set(state->occupancy[BOTH_SIDES], G1) &&
-            !is_sq_attacked(state, E1, BLACK) &&
-            !is_sq_attacked(state, F1, BLACK)) {  // Check if G1 is under attack later
-            add_move(move_list, encode_move(E1, G1, WK, -1, false, false, false, true));
-        }
-        // Queen-side
-        if ((state->packed.castling & WQS) &&  // Implies king and rook are on their original squares
-            !is_bit_set(state->occupancy[BOTH_SIDES], D1) && !is_bit_set(state->occupancy[BOTH_SIDES], C1) &&
-            !is_bit_set(state->occupancy[BOTH_SIDES], B1) && !is_sq_attacked(state, E1, BLACK) &&
-            !is_sq_attacked(state, D1, BLACK)) {  // Check if C1 is under attack later
-            add_move(move_list, encode_move(E1, C1, WK, -1, false, false, false, true));
-        }
-    } else {
-        // Pawn moves
-        bb = state->pieces[BP];
-        while (bb) {
-            source_sq = pop_lsb(&bb);
-            if (source_sq >= A2) {
-                if (!is_bit_set(state->occupancy[BOTH_SIDES], source_sq - 8)) {  // One forward
-                    target_sq = source_sq - 8;
-                    if (target_sq <= H1) {  // Promotion
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BQ, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BR, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BB, false, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BN, false, false, false, false));
-                    } else {
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, -1, false, false, false, false));
-                    }
-                    if (source_sq >= A7 && !is_bit_set(state->occupancy[BOTH_SIDES], source_sq - 16)) {  // Double push
-                        target_sq = source_sq - 16;
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, -1, false, true, false, false));
-                    }
-                }
-                // Normal captures
-                attacks = pawn_attacks[BLACK][source_sq] & state->occupancy[WHITE];
-                while (attacks) {
-                    target_sq = pop_lsb(&attacks);
-                    if (target_sq <= H1) {  // Promotion
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BQ, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BR, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BB, true, false, false, false));
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, BN, true, false, false, false));
-                    } else {
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, -1, true, false, false, false));
-                    }
-                }
-                // En passant
-                const int ep_sq = state->packed.en_passant;
-                if (ep_sq != INVALID_SQ) {
-                    if (pawn_attacks[BLACK][source_sq] & (UINT64_C(1) << ep_sq)) {
-                        target_sq = ep_sq;
-                        add_move(move_list, encode_move(source_sq, target_sq, BP, -1, true, false, true, false));
-                    }
-                }
-            }
-        }
-        // Castling moves
-        // King-side
-        if ((state->packed.castling & BKS) &&  // Implies king and rook are on their original squares
-            !is_bit_set(state->occupancy[BOTH_SIDES], F8) && !is_bit_set(state->occupancy[BOTH_SIDES], G8) &&
-            !is_sq_attacked(state, E8, WHITE) &&
-            !is_sq_attacked(state, F8, WHITE)) {  // Check if G8 is under attack later
-            add_move(move_list, encode_move(E8, G8, BK, -1, false, false, false, true));
-        }
-        // Queen-side
-        if ((state->packed.castling & BQS) &&  // Implies king and rook are on their original squares
-            !is_bit_set(state->occupancy[BOTH_SIDES], D8) && !is_bit_set(state->occupancy[BOTH_SIDES], C8) &&
-            !is_bit_set(state->occupancy[BOTH_SIDES], B8) && !is_sq_attacked(state, E8, WHITE) &&
-            !is_sq_attacked(state, D8, WHITE)) {  // Check if C8 is under attack later
-            add_move(move_list, encode_move(E8, C8, BK, -1, false, false, false, true));
-        }
-    }
-    // Knight moves
-    int piece = (state->packed.side == WHITE) ? WN : BN;
-    bb = state->pieces[piece];
-    while (bb) {
-        source_sq = pop_lsb(&bb);
-        attacks = knight_attacks[source_sq] & ~state->occupancy[state->packed.side];
-        while (attacks) {
-            target_sq = pop_lsb(&attacks);
-            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
-            } else {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
-            }
-        }
-    }
-    // Bishop moves
-    piece = (state->packed.side == WHITE) ? WB : BB;
-    bb = state->pieces[piece];
-    while (bb) {
-        source_sq = pop_lsb(&bb);
-        attacks = get_bishop_attacks(source_sq, state->occupancy[BOTH_SIDES]) & ~state->occupancy[state->packed.side];
-        while (attacks) {
-            target_sq = pop_lsb(&attacks);
-            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
-            } else {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
-            }
-        }
-    }
-    // Rook moves
-    piece = (state->packed.side == WHITE) ? WR : BR;
-    bb = state->pieces[piece];
-    while (bb) {
-        source_sq = pop_lsb(&bb);
-        attacks = get_rook_attacks(source_sq, state->occupancy[BOTH_SIDES]) & ~state->occupancy[state->packed.side];
-        while (attacks) {
-            target_sq = pop_lsb(&attacks);
-            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
-            } else {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
-            }
-        }
-    }
-    // Queen moves
-    piece = (state->packed.side == WHITE) ? WQ : BQ;
-    bb = state->pieces[piece];
-    while (bb) {
-        source_sq = pop_lsb(&bb);
-        attacks = get_queen_attacks(source_sq, state->occupancy[BOTH_SIDES]) & ~state->occupancy[state->packed.side];
-        while (attacks) {
-            target_sq = pop_lsb(&attacks);
-            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
-            } else {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
-            }
-        }
-    }
-    // King moves (not castling)
-    piece = (state->packed.side == WHITE) ? WK : BK;
-    bb = state->pieces[piece];
-    while (bb) {
-        source_sq = pop_lsb(&bb);
-        attacks = king_attacks[source_sq] & ~state->occupancy[state->packed.side];
-        while (attacks) {
-            target_sq = pop_lsb(&attacks);
-            if (is_bit_set(state->occupancy[!state->packed.side], target_sq)) {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, true, false, false, false));
-            } else {
-                add_move(move_list, encode_move(source_sq, target_sq, piece, -1, false, false, false, false));
-            }
-        }
-    }
+    const int idx_offset = ((state->packed.side == WHITE) ? 0 : 6);
+    add_pawn_moves(state, move_list, WP + idx_offset);
+    add_castling_moves(state, move_list);
+    add_generic_piece_moves(state, move_list, get_knight_attacks, WN + idx_offset);
+    add_generic_piece_moves(state, move_list, get_bishop_attacks, WB + idx_offset);
+    add_generic_piece_moves(state, move_list, get_rook_attacks, WR + idx_offset);
+    add_generic_piece_moves(state, move_list, get_queen_attacks, WQ + idx_offset);
+    add_generic_piece_moves(state, move_list, get_king_attacks, WK + idx_offset);
 }
 
 // clang-format off
@@ -291,9 +202,20 @@ static constexpr uint32_t castling_rights[64] = {
 };
 // clang-format on
 
-bool make_move(State* state, Move move, int move_type) {
+bool make_move(State* restrict state, Move move, int move_type) {
     assert(state != nullptr);
     assert(move_type == ALL_MOVES || move_type == JUST_CAPTURES);
+
+    if (move.is_invalid) return false;
+
+    int idx_offset = 0;
+    int rev_idx_offset = 6;
+    int ep_direction = -8;
+    if (state->packed.side == BLACK) {
+        idx_offset = 6;
+        rev_idx_offset = 0;
+        ep_direction = 8;
+    }
 
     if (move_type == JUST_CAPTURES) {
         if (move.is_capture) {
@@ -308,8 +230,7 @@ bool make_move(State* state, Move move, int move_type) {
         set_bit(&state->pieces[move.moved_piece], move.target_sq);
 
         if (move.is_capture) {
-            int piece_idx_start = (state->packed.side == WHITE) ? 6 : 0;  // Opponent's pieces
-            for (int i = piece_idx_start; i < piece_idx_start + 6; ++i) {
+            for (int i = rev_idx_offset; i < rev_idx_offset + 6; ++i) {
                 if (is_bit_set(state->pieces[i], move.target_sq)) {
                     clear_bit(&state->pieces[i], move.target_sq);
                     break;
@@ -317,50 +238,30 @@ bool make_move(State* state, Move move, int move_type) {
             }
         }
 
-        if (move.promoted_piece != 12) {
+        if (move.promoted_piece != INVALID_PIECE) {
             clear_bit(&state->pieces[move.moved_piece], move.target_sq);
             set_bit(&state->pieces[move.promoted_piece], move.target_sq);
         }
 
-        if (move.is_en_passant) {
-            if (state->packed.side == WHITE) {
-                clear_bit(&state->pieces[BP], move.target_sq - 8);
-            } else {
-                clear_bit(&state->pieces[WP], move.target_sq + 8);
-            }
-        }
+        if (move.is_en_passant) clear_bit(&state->pieces[WP + rev_idx_offset], move.target_sq + ep_direction);
 
-        state->packed.en_passant = INVALID_SQ;
-        if (move.is_double_push) {
-            if (state->packed.side == WHITE) {
-                state->packed.en_passant = move.target_sq - 8;
-            } else {
-                state->packed.en_passant = move.target_sq + 8;
-            }
-        }
+#define FIRST_RANK_SQ(file) ((state->packed.side == WHITE) ? file##1 : file##8)
 
         if (move.is_castling) {
-            if (state->packed.side == WHITE) {
-                if (move.target_sq == G1) {
-                    clear_bit(&state->pieces[WR], H1);
-                    set_bit(&state->pieces[WR], F1);
-                } else if (move.target_sq == C1) {
-                    clear_bit(&state->pieces[WR], A1);
-                    set_bit(&state->pieces[WR], D1);
-                }
-            } else {
-                if (move.target_sq == G8) {
-                    clear_bit(&state->pieces[BR], H8);
-                    set_bit(&state->pieces[BR], F8);
-                } else if (move.target_sq == C8) {
-                    clear_bit(&state->pieces[BR], A8);
-                    set_bit(&state->pieces[BR], D8);
-                }
+            if (move.target_sq == FIRST_RANK_SQ(G)) {
+                clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(H));
+                set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(F));
+            } else if (move.target_sq == FIRST_RANK_SQ(C)) {
+                clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(A));
+                set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(D));
             }
         }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+        state->packed.en_passant = INVALID_SQ;
+        if (move.is_double_push) state->packed.en_passant = (uint32_t)(move.target_sq + ep_direction);
+
         state->packed.castling &= castling_rights[move.source_sq];
         state->packed.castling &= castling_rights[move.target_sq];
 #pragma GCC diagnostic pop
@@ -374,7 +275,7 @@ bool make_move(State* state, Move move, int move_type) {
                                    state->pieces[BQ] | state->pieces[BK];
         state->occupancy[BOTH_SIDES] = state->occupancy[WHITE] | state->occupancy[BLACK];
 
-        if (is_sq_attacked(state, get_lsb(state->pieces[WK + (6 * state->packed.side)]), !state->packed.side)) {
+        if (is_sq_attacked(state, get_lsb(state->pieces[WK + idx_offset]), !state->packed.side)) {
             *state = backup;
             return false;
         }
@@ -383,4 +284,25 @@ bool make_move(State* state, Move move, int move_type) {
     }
 
     return true;
+}
+
+static constexpr char promotion_pieces[] = {
+    [WQ] = 'q', [WR] = 'r', [WB] = 'b', [WN] = 'n', [BQ] = 'q', [BR] = 'r', [BB] = 'b', [BN] = 'n'};
+
+void print_move(Move move) {
+    printf("%s%s", squares[move.source_sq], squares[move.target_sq]);
+    if (move.promoted_piece != INVALID_PIECE) printf("%c", promotion_pieces[move.promoted_piece]);
+}
+
+void print_move_list(const MoveList* restrict move_list) {
+    assert(move_list != nullptr);
+
+    for (int i = 0; i < move_list->count; ++i) {
+        printf("%d: ", i + 1);
+        print_move(move_list->moves[i]);
+        printf(",%c,%c,%c,%c,%c\n", ascii_pieces[move_list->moves[i].moved_piece],
+               move_list->moves[i].is_capture ? 'y' : 'n', move_list->moves[i].is_double_push ? 'y' : 'n',
+               move_list->moves[i].is_en_passant ? 'y' : 'n', move_list->moves[i].is_castling ? 'y' : 'n');
+    }
+    printf("\nTotal moves: %d\n", move_list->count);
 }

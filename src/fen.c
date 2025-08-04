@@ -49,10 +49,10 @@ void parse_fen(State* restrict state, const char* restrict fen) {
     assert(state != nullptr && fen != nullptr);
 
     // Reset bitboards
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0; i < NUM_PIECES; ++i) {
         state->pieces[i] = 0;
     }
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < NUM_OCCUPANCIES; ++i) {
         state->occupancy[i] = 0;
     }
 

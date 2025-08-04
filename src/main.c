@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "sliders.h"
+#include "attacks.h"
 #include "state.h"
 #include "uci.h"
 
