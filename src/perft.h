@@ -2,4 +2,4 @@
 
 #include "state.h"
 
-long perft(State* state, int depth);
+long perft(State* restrict state, int depth);

@@ -4,7 +4,7 @@
 
 #include "movegen.h"
 
-long perft(State* state, int depth) {
+long perft(State* restrict state, int depth) {
     assert(state != nullptr);
     assert(depth >= 0);
 
