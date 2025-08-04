@@ -2,4 +2,4 @@
 
 #include "state.h"
 
-void search_position(State *state, int depth);
+void search_position(const State* restrict state, int depth);
