@@ -23,4 +23,4 @@ typedef struct {
 
 static constexpr char ascii_pieces[NUM_PIECES] = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};
 
-void print_state(const State* state);
+void print_state(const State* restrict state);
