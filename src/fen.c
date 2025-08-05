@@ -10,32 +10,19 @@
 
 static int char_to_piece(char c) {
     switch (c) {
-        case 'P':
-            return WP;
-        case 'N':
-            return WN;
-        case 'B':
-            return WB;
-        case 'R':
-            return WR;
-        case 'Q':
-            return WQ;
-        case 'K':
-            return WK;
-        case 'p':
-            return BP;
-        case 'n':
-            return BN;
-        case 'b':
-            return BB;
-        case 'r':
-            return BR;
-        case 'q':
-            return BQ;
-        case 'k':
-            return BK;
-        default:
-            return INVALID_PIECE;
+        case 'P': return WP;
+        case 'N': return WN;
+        case 'B': return WB;
+        case 'R': return WR;
+        case 'Q': return WQ;
+        case 'K': return WK;
+        case 'p': return BP;
+        case 'n': return BN;
+        case 'b': return BB;
+        case 'r': return BR;
+        case 'q': return BQ;
+        case 'k': return BK;
+        default: return INVALID_PIECE;
     }
 }
 
@@ -89,18 +76,10 @@ void parse_fen(State* restrict state, const char* restrict fen) {
     } else {
         while (*fen != ' ') {
             switch (*fen) {
-                case 'K':
-                    state->packed.castling |= WKS;
-                    break;
-                case 'Q':
-                    state->packed.castling |= WQS;
-                    break;
-                case 'k':
-                    state->packed.castling |= BKS;
-                    break;
-                case 'q':
-                    state->packed.castling |= BQS;
-                    break;
+                case 'K': state->packed.castling |= WKS; break;
+                case 'Q': state->packed.castling |= WQS; break;
+                case 'k': state->packed.castling |= BKS; break;
+                case 'q': state->packed.castling |= BQS; break;
             }
             ++fen;
         }

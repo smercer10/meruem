@@ -28,20 +28,11 @@ Move parse_move(const State *restrict state, const char *restrict move, int *res
     if (move[4] != '\0' && move[4] != ' ') {  // Need to check spaces in case there are multiple moves in the string
         ++(*consumed);
         switch (move[4]) {
-            case 'q':
-                promoted_piece = WQ + idx_offset;
-                break;
-            case 'r':
-                promoted_piece = WR + idx_offset;
-                break;
-            case 'b':
-                promoted_piece = WB + idx_offset;
-                break;
-            case 'n':
-                promoted_piece = WN + idx_offset;
-                break;
-            default:
-                return (Move){.is_invalid = 1};
+            case 'q': promoted_piece = WQ + idx_offset; break;
+            case 'r': promoted_piece = WR + idx_offset; break;
+            case 'b': promoted_piece = WB + idx_offset; break;
+            case 'n': promoted_piece = WN + idx_offset; break;
+            default: return (Move){.is_invalid = 1};
         }
     }
 

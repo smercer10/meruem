@@ -73,7 +73,6 @@ int eval_state(const State* restrict state) {
             score += material_scores[i];
             int sq = pop_lsb(&piece);
             if (i >= BP) sq ^= 56;  // Mirror positional scores
-            // clang-format off
             switch (i) {
                 case WP: score += pawn_positional_scores[sq]; break;
                 case WN: score += knight_positional_scores[sq]; break;
@@ -86,7 +85,6 @@ int eval_state(const State* restrict state) {
                 case BR: score -= rook_positional_scores[sq]; break;
                 case BK: score -= king_positional_scores[sq]; break;
             }
-            // clang-format on
         }
     }
     return (state->packed.side == WHITE) ? score : -score;
