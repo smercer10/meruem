@@ -91,6 +91,14 @@ int eval_state(const State* restrict state) {
     return (state->packed.side == WHITE) ? score : -score;
 }
 
+static inline int in_check(const State* restrict state) {
+    assert(state != nullptr);
+    assert(state->packed.side == WHITE || state->packed.side == BLACK);
+    return is_sq_attacked(state,
+                          ((state->packed.side == WHITE) ? get_lsb(state->pieces[WK]) : get_lsb(state->pieces[BK])),
+                          !state->packed.side);
+}
+
 static inline int negamax(State* restrict state, Move* restrict best_move, int depth, int max_depth, int alpha,
                           int beta) {
     assert(state != nullptr && best_move != nullptr);
@@ -106,23 +114,21 @@ static inline int negamax(State* restrict state, Move* restrict best_move, int d
         State backup = *state;
 
         if (!make_move(state, move_list.moves[i], ALL_MOVES)) continue;
-
         ++legal_moves;
-
         int score = -negamax(state, best_move, depth - 1, max_depth, -beta, -alpha);
 
         *state = backup;
 
-        if (score >= beta) return beta;  // Beta cutoff
+        if (score >= beta) return beta;
         if (score > alpha) {
             alpha = score;
-            if (depth == max_depth) *best_move = move_list.moves[i];  // Update best move at root depth
+            if (depth == max_depth) *best_move = move_list.moves[i];
         }
     }
 
-    (void)legal_moves;  // TODO: Handle positions with no legal moves
+    if (legal_moves == 0) return (in_check(state) ? (-999999 + (max_depth - depth)) : 0);
 
-    return alpha;  // Return the best score found
+    return alpha;
 }
 
 void search_position(State* restrict state, int depth) {
