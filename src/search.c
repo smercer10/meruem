@@ -5,6 +5,7 @@
 
 #include "bitboard.h"
 #include "globals.h"
+#include "movegen.h"
 #include "state.h"
 
 static constexpr int material_scores[NUM_PIECES] = {100,  300,  350,  500,  1000,  10000,
@@ -90,13 +91,48 @@ int eval_state(const State* restrict state) {
     return (state->packed.side == WHITE) ? score : -score;
 }
 
-void search_position(const State* restrict state, int depth) {
+static inline int negamax(State* restrict state, Move* restrict best_move, int depth, int max_depth, int alpha,
+                          int beta) {
+    assert(state != nullptr && best_move != nullptr);
+    assert(depth >= 0 && max_depth >= 0);
+
+    if (depth == 0) return eval_state(state);
+
+    MoveList move_list;
+    gen_pseudo_legal_moves(state, &move_list);
+    int legal_moves = 0;
+
+    for (int i = 0; i < move_list.count; ++i) {
+        State backup = *state;
+
+        if (!make_move(state, move_list.moves[i], ALL_MOVES)) continue;
+
+        ++legal_moves;
+
+        int score = -negamax(state, best_move, depth - 1, max_depth, -beta, -alpha);
+
+        *state = backup;
+
+        if (score >= beta) return beta;  // Beta cutoff
+        if (score > alpha) {
+            alpha = score;
+            if (depth == max_depth) *best_move = move_list.moves[i];  // Update best move at root depth
+        }
+    }
+
+    (void)legal_moves;  // TODO: Handle positions with no legal moves
+
+    return alpha;  // Return the best score found
+}
+
+void search_position(State* restrict state, int depth) {
     assert(state != nullptr);
     assert(depth >= 0);
 
-    // Silence unused variable warnings for now
-    (void)state;
-    (void)depth;
+    Move best_move = {.is_invalid = true};
+    negamax(state, &best_move, depth, depth, -999999, 999999);
 
-    puts("bestmove d2d4");  // TODO: Replace with actual search logic
+    printf("bestmove ");
+    print_move(best_move);
+    puts("");
 }

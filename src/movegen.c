@@ -266,6 +266,13 @@ bool make_move(State* restrict state, Move move, int move_type) {
         state->packed.castling &= castling_rights[move.target_sq];
 #pragma GCC diagnostic pop
 
+        if (move.is_capture || move.moved_piece == WP || move.moved_piece == BP) {
+            state->packed.halfmove = 0;
+        } else {
+            ++state->packed.halfmove;
+        }
+        if (state->packed.side == BLACK) ++state->packed.fullmove;
+
         state->occupancy[WHITE] = 0;
         state->occupancy[BLACK] = 0;
         state->occupancy[BOTH_SIDES] = 0;

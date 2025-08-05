@@ -112,5 +112,6 @@ void start_uci_loop(State *restrict state) {
         } else if (strcmp(command, "quit") == 0) {
             break;
         }
+        print_state(state);  // TODO: Used for debugging, remove later
     }
 }
