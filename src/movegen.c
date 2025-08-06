@@ -195,78 +195,72 @@ bool make_move(State* restrict state, Move move, int move_type) {
         ep_direction = 8;
     }
 
-    if (move_type == JUST_CAPTURES) {
-        if (move.is_capture) {
-            make_move(state, move, ALL_MOVES);
-        } else {
-            return false;
-        }
-    } else {
-        State backup = *state;
+    if (move_type == JUST_CAPTURES && !move.is_capture) return false;
 
-        clear_bit(&state->pieces[move.moved_piece], move.source_sq);
-        set_bit(&state->pieces[move.moved_piece], move.target_sq);
+    const State backup = *state;
 
-        if (move.is_capture) {
-            for (int i = rev_idx_offset; i < rev_idx_offset + 6; ++i) {
-                if (is_bit_set(state->pieces[i], move.target_sq)) {
-                    clear_bit(&state->pieces[i], move.target_sq);
-                    break;
-                }
+    clear_bit(&state->pieces[move.moved_piece], move.source_sq);
+    set_bit(&state->pieces[move.moved_piece], move.target_sq);
+
+    if (move.is_capture) {
+        for (int i = rev_idx_offset; i < rev_idx_offset + 6; ++i) {
+            if (is_bit_set(state->pieces[i], move.target_sq)) {
+                clear_bit(&state->pieces[i], move.target_sq);
+                break;
             }
         }
+    }
 
-        if (move.promoted_piece != INVALID_PIECE) {
-            clear_bit(&state->pieces[move.moved_piece], move.target_sq);
-            set_bit(&state->pieces[move.promoted_piece], move.target_sq);
-        }
+    if (move.promoted_piece != INVALID_PIECE) {
+        clear_bit(&state->pieces[move.moved_piece], move.target_sq);
+        set_bit(&state->pieces[move.promoted_piece], move.target_sq);
+    }
 
-        if (move.is_en_passant) clear_bit(&state->pieces[WP + rev_idx_offset], move.target_sq + ep_direction);
+    if (move.is_en_passant) clear_bit(&state->pieces[WP + rev_idx_offset], move.target_sq + ep_direction);
 
 #define FIRST_RANK_SQ(file) ((state->packed.side == WHITE) ? file##1 : file##8)
 
-        if (move.is_castling) {
-            if (move.target_sq == FIRST_RANK_SQ(G)) {
-                clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(H));
-                set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(F));
-            } else if (move.target_sq == FIRST_RANK_SQ(C)) {
-                clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(A));
-                set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(D));
-            }
+    if (move.is_castling) {
+        if (move.target_sq == FIRST_RANK_SQ(G)) {
+            clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(H));
+            set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(F));
+        } else if (move.target_sq == FIRST_RANK_SQ(C)) {
+            clear_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(A));
+            set_bit(&state->pieces[WR + idx_offset], FIRST_RANK_SQ(D));
         }
+    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-        state->packed.en_passant = INVALID_SQ;
-        if (move.is_double_push) state->packed.en_passant = (uint32_t)(move.target_sq + ep_direction);
+    state->packed.en_passant = INVALID_SQ;
+    if (move.is_double_push) state->packed.en_passant = (uint32_t)(move.target_sq + ep_direction);
 
-        state->packed.castling &= castling_rights[move.source_sq];
-        state->packed.castling &= castling_rights[move.target_sq];
+    state->packed.castling &= castling_rights[move.source_sq];
+    state->packed.castling &= castling_rights[move.target_sq];
 #pragma GCC diagnostic pop
 
-        if (move.is_capture || move.moved_piece == WP || move.moved_piece == BP) {
-            state->packed.halfmove = 0;
-        } else {
-            ++state->packed.halfmove;
-        }
-        if (state->packed.side == BLACK) ++state->packed.fullmove;
-
-        state->occupancy[WHITE] = 0;
-        state->occupancy[BLACK] = 0;
-        state->occupancy[BOTH_SIDES] = 0;
-        state->occupancy[WHITE] |= state->pieces[WP] | state->pieces[WN] | state->pieces[WB] | state->pieces[WR] |
-                                   state->pieces[WQ] | state->pieces[WK];
-        state->occupancy[BLACK] |= state->pieces[BP] | state->pieces[BN] | state->pieces[BB] | state->pieces[BR] |
-                                   state->pieces[BQ] | state->pieces[BK];
-        state->occupancy[BOTH_SIDES] = state->occupancy[WHITE] | state->occupancy[BLACK];
-
-        if (is_sq_attacked(state, get_lsb(state->pieces[WK + idx_offset]), !state->packed.side)) {
-            *state = backup;
-            return false;
-        }
-
-        state->packed.side = !state->packed.side;
+    if (move.is_capture || move.moved_piece == WP || move.moved_piece == BP) {
+        state->packed.halfmove = 0;
+    } else {
+        ++state->packed.halfmove;
     }
+    if (state->packed.side == BLACK) ++state->packed.fullmove;
+
+    state->occupancy[WHITE] = 0;
+    state->occupancy[BLACK] = 0;
+    state->occupancy[BOTH_SIDES] = 0;
+    state->occupancy[WHITE] |= state->pieces[WP] | state->pieces[WN] | state->pieces[WB] | state->pieces[WR] |
+                               state->pieces[WQ] | state->pieces[WK];
+    state->occupancy[BLACK] |= state->pieces[BP] | state->pieces[BN] | state->pieces[BB] | state->pieces[BR] |
+                               state->pieces[BQ] | state->pieces[BK];
+    state->occupancy[BOTH_SIDES] = state->occupancy[WHITE] | state->occupancy[BLACK];
+
+    if (is_sq_attacked(state, get_lsb(state->pieces[WK + idx_offset]), !state->packed.side)) {
+        *state = backup;
+        return false;
+    }
+
+    state->packed.side = !state->packed.side;
 
     return true;
 }

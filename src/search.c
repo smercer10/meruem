@@ -99,23 +99,49 @@ static inline int in_check(const State* restrict state) {
                           !state->packed.side);
 }
 
+static inline int quiescence(State* restrict state, int alpha, int beta) {
+    assert(state != nullptr);
+
+    const int stand_pat = eval_state(state);
+
+    if (stand_pat >= beta) return beta;
+    if (stand_pat > alpha) alpha = stand_pat;
+
+    MoveList move_list;
+    gen_pseudo_legal_moves(state, &move_list);
+
+    for (int i = 0; i < move_list.count; ++i) {
+        const State backup = *state;
+
+        if (!make_move(state, move_list.moves[i], JUST_CAPTURES)) continue;
+        const int score = -quiescence(state, -beta, -alpha);
+
+        *state = backup;
+
+        if (score >= beta) return beta;
+        if (score > alpha) alpha = score;
+    }
+
+    return alpha;
+}
+
 static inline int negamax(State* restrict state, Move* restrict best_move, int depth, int max_depth, int alpha,
                           int beta) {
     assert(state != nullptr && best_move != nullptr);
     assert(depth >= 0 && max_depth >= 0);
 
-    if (depth == 0) return eval_state(state);
+    if (depth == 0) return quiescence(state, alpha, beta);
 
     MoveList move_list;
     gen_pseudo_legal_moves(state, &move_list);
     int legal_moves = 0;
 
     for (int i = 0; i < move_list.count; ++i) {
-        State backup = *state;
+        const State backup = *state;
 
         if (!make_move(state, move_list.moves[i], ALL_MOVES)) continue;
         ++legal_moves;
-        int score = -negamax(state, best_move, depth - 1, max_depth, -beta, -alpha);
+        const int score = -negamax(state, best_move, depth - 1, max_depth, -beta, -alpha);
 
         *state = backup;
 

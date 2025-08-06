@@ -15,7 +15,7 @@ long perft(State* restrict state, int depth) {
 
     long nodes = 0;
     for (int i = 0; i < move_list.count; ++i) {
-        State backup = *state;
+        const State backup = *state;
         if (make_move(state, move_list.moves[i], ALL_MOVES)) nodes += perft(state, depth - 1);
         *state = backup;
     }
