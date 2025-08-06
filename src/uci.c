@@ -92,7 +92,7 @@ void start_uci_loop(State *restrict state) {
 
     setbuf(stdout, NULL);  // Ensure stdout is unbuffered for immediate output
 
-    char command[256];
+    char command[2048];
 
     while (fgets(command, sizeof(command), stdin)) {
         command[strcspn(command, "\n")] = '\0';  // Remove trailing newline
