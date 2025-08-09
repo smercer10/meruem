@@ -170,6 +170,7 @@ static inline int quiescence(State* restrict state, int alpha, int beta, int ply
 
     if (stand_pat >= beta) return beta;
     if (stand_pat > alpha) alpha = stand_pat;
+    if ((stand_pat + 1000) < alpha) return alpha;  // If even the best capture is worse than alpha, return alpha
 
     MoveList move_list;
     gen_pseudo_legal_moves(state, &move_list);
