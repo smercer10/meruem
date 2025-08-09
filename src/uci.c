@@ -84,7 +84,7 @@ void parse_go(State *restrict state, const char *restrict command) {
         depth = atoi(command);
     }
 
-    search_position(state, depth);
+    search_position(state, depth, nullptr);
 }
 
 void start_uci_loop(State *restrict state) {
