@@ -14,9 +14,8 @@ int main(void) {
     State state;
     // start_uci_loop(&state);
 
-    parse_fen(&state, TRICKY_POSITION);
-    int nodes_searched = 0;
-    search_position(&state, 8, &nodes_searched);
+    parse_fen(&state, KILLER_POSITION);
+    search_position(&state, 4);
     printf("Nodes searched: %d\n", nodes_searched);
 
     return EXIT_SUCCESS;

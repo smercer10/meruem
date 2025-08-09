@@ -64,20 +64,6 @@ static constexpr int king_positional_scores[64] = {
 };
 // clang-format on
 
-static constexpr int mvv_lva_scores[NUM_PIECES][NUM_PIECES] = {
-    {105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
-    {104, 204, 304, 404, 504, 604, 104, 204, 304, 404, 504, 604},
-    {103, 203, 303, 403, 503, 603, 103, 203, 303, 403, 503, 603},
-    {102, 202, 302, 402, 502, 602, 102, 202, 302, 402, 502, 602},
-    {101, 201, 301, 401, 501, 601, 101, 201, 301, 401, 501, 601},
-    {100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600},
-    {105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
-    {104, 204, 304, 404, 504, 604, 104, 204, 304, 404, 504, 604},
-    {103, 203, 303, 403, 503, 603, 103, 203, 303, 403, 503, 603},
-    {102, 202, 302, 402, 502, 602, 102, 202, 302, 402, 502, 602},
-    {101, 201, 301, 401, 501, 601, 101, 201, 301, 401, 501, 601},
-    {100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600}};
-
 int eval_state(const State* restrict state) {
     assert(state != nullptr);
 
@@ -105,12 +91,33 @@ int eval_state(const State* restrict state) {
     return (state->packed.side == WHITE) ? score : -score;
 }
 
-static inline int in_check(const State* restrict state) {
-    assert(state != nullptr);
-    assert(state->packed.side == WHITE || state->packed.side == BLACK);
-    return is_sq_attacked(state,
-                          ((state->packed.side == WHITE) ? get_lsb(state->pieces[WK]) : get_lsb(state->pieces[BK])),
-                          !state->packed.side);
+static constexpr int mvv_lva_scores[NUM_PIECES][NUM_PIECES] = {
+    {105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
+    {104, 204, 304, 404, 504, 604, 104, 204, 304, 404, 504, 604},
+    {103, 203, 303, 403, 503, 603, 103, 203, 303, 403, 503, 603},
+    {102, 202, 302, 402, 502, 602, 102, 202, 302, 402, 502, 602},
+    {101, 201, 301, 401, 501, 601, 101, 201, 301, 401, 501, 601},
+    {100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600},
+    {105, 205, 305, 405, 505, 605, 105, 205, 305, 405, 505, 605},
+    {104, 204, 304, 404, 504, 604, 104, 204, 304, 404, 504, 604},
+    {103, 203, 303, 403, 503, 603, 103, 203, 303, 403, 503, 603},
+    {102, 202, 302, 402, 502, 602, 102, 202, 302, 402, 502, 602},
+    {101, 201, 301, 401, 501, 601, 101, 201, 301, 401, 501, 601},
+    {100, 200, 300, 400, 500, 600, 100, 200, 300, 400, 500, 600}};
+
+int nodes_searched = 0;
+static Move killer_moves[MAX_DEPTH][2] = {0};
+static int history_scores[NUM_PIECES][64] = {0};
+
+static inline void update_killer_moves(int ply, Move move) {
+    if (ply >= MAX_DEPTH || move.is_capture || killer_moves[ply][0].raw == move.raw) return;
+    killer_moves[ply][1] = killer_moves[ply][0];
+    killer_moves[ply][0] = move;
+}
+
+static inline void update_history_scores(Move move, int depth) {
+    if (move.is_capture) return;
+    history_scores[move.moved_piece][move.target_sq] += depth * depth;
 }
 
 static inline int get_piece_on_square(const State* restrict state, int sq) {
@@ -123,21 +130,22 @@ static inline int get_piece_on_square(const State* restrict state, int sq) {
     return INVALID_PIECE;
 }
 
-static inline int score_move(const State* restrict state, Move move) {
+static inline int score_move(const State* restrict state, Move move, int ply) {
     assert(state != nullptr);
 
-    if (move.is_capture) {
-        return mvv_lva_scores[move.moved_piece][get_piece_on_square(state, move.target_sq)];
-    } else {
-        return 0;
+    if (move.is_capture) return mvv_lva_scores[move.moved_piece][get_piece_on_square(state, move.target_sq)] + 10000;
+    if (ply < MAX_DEPTH) {
+        if (killer_moves[ply][0].raw == move.raw) return 9000;
+        if (killer_moves[ply][1].raw == move.raw) return 8000;
     }
+    return history_scores[move.moved_piece][move.target_sq];
 }
 
-static inline void sort_moves(const State* restrict state, MoveList* restrict move_list) {
+static inline void sort_moves(const State* restrict state, MoveList* restrict move_list, int ply) {
     assert(state != nullptr && move_list != nullptr);
 
     int scores[MAX_MOVES];
-    for (int i = 0; i < move_list->count; ++i) scores[i] = score_move(state, move_list->moves[i]);
+    for (int i = 0; i < move_list->count; ++i) scores[i] = score_move(state, move_list->moves[i], ply);
 
     for (int i = 1; i < move_list->count; ++i) {
         const Move key = move_list->moves[i];
@@ -153,10 +161,10 @@ static inline void sort_moves(const State* restrict state, MoveList* restrict mo
     }
 }
 
-static inline int quiescence(State* restrict state, int alpha, int beta, int* nodes_searched) {
-    assert(state != nullptr && nodes_searched != nullptr);
+static inline int quiescence(State* restrict state, int alpha, int beta, int ply) {
+    assert(state != nullptr);
 
-    ++(*nodes_searched);
+    ++nodes_searched;
 
     const int stand_pat = eval_state(state);
 
@@ -166,13 +174,13 @@ static inline int quiescence(State* restrict state, int alpha, int beta, int* no
     MoveList move_list;
     gen_pseudo_legal_moves(state, &move_list);
 
-    sort_moves(state, &move_list);
+    sort_moves(state, &move_list, ply);
 
     for (int i = 0; i < move_list.count; ++i) {
         const State backup = *state;
 
         if (!make_move(state, move_list.moves[i], JUST_CAPTURES)) continue;
-        const int score = -quiescence(state, -beta, -alpha, nodes_searched);
+        const int score = -quiescence(state, -beta, -alpha, ply + 1);
 
         *state = backup;
 
@@ -183,19 +191,26 @@ static inline int quiescence(State* restrict state, int alpha, int beta, int* no
     return alpha;
 }
 
-static inline int negamax(State* restrict state, Move* restrict best_move, int depth, int max_depth, int alpha,
-                          int beta, int* nodes_searched) {
-    assert(state != nullptr && best_move != nullptr && nodes_searched != nullptr);
-    assert(depth >= 0 && max_depth >= 0);
+static inline int in_check(const State* restrict state) {
+    assert(state != nullptr);
+    assert(state->packed.side == WHITE || state->packed.side == BLACK);
+    return is_sq_attacked(state,
+                          ((state->packed.side == WHITE) ? get_lsb(state->pieces[WK]) : get_lsb(state->pieces[BK])),
+                          !state->packed.side);
+}
 
-    ++(*nodes_searched);
+static inline int negamax(State* restrict state, Move* restrict best_move, int depth, int alpha, int beta, int ply) {
+    assert(state != nullptr && best_move != nullptr);
+    assert(depth >= 0);
 
-    if (depth == 0) return quiescence(state, alpha, beta, nodes_searched);
+    ++nodes_searched;
+
+    if (depth == 0) return quiescence(state, alpha, beta, ply);
 
     MoveList move_list;
     gen_pseudo_legal_moves(state, &move_list);
 
-    sort_moves(state, &move_list);
+    sort_moves(state, &move_list, ply);
 
     int legal_moves = 0;
     for (int i = 0; i < move_list.count; ++i) {
@@ -203,28 +218,34 @@ static inline int negamax(State* restrict state, Move* restrict best_move, int d
 
         if (!make_move(state, move_list.moves[i], ALL_MOVES)) continue;
         ++legal_moves;
-        const int score = -negamax(state, best_move, depth - 1, max_depth, -beta, -alpha, nodes_searched);
+        const int score = -negamax(state, best_move, depth - 1, -beta, -alpha, ply + 1);
 
         *state = backup;
 
-        if (score >= beta) return beta;
+        if (score >= beta) {
+            update_killer_moves(ply, move_list.moves[i]);
+            update_history_scores(move_list.moves[i], depth);
+            return beta;
+        }
         if (score > alpha) {
             alpha = score;
-            if (depth == max_depth) *best_move = move_list.moves[i];
+            if (ply == 0) *best_move = move_list.moves[i];
         }
     }
 
-    if (legal_moves == 0) return (in_check(state) ? (-999999 + (max_depth - depth)) : 0);
+    if (legal_moves == 0) return (in_check(state) ? (-999999 + ply) : 0);
 
     return alpha;
 }
 
-void search_position(State* restrict state, int depth, int* nodes_searched) {
-    assert(state != nullptr && nodes_searched != nullptr);
+void search_position(State* restrict state, int depth) {
+    assert(state != nullptr);
     assert(depth >= 0);
 
+    nodes_searched = 0;
+
     Move best_move = {.is_invalid = true};
-    negamax(state, &best_move, depth, depth, -999999, 999999, nodes_searched);
+    negamax(state, &best_move, depth, -999999, 999999, 0);
 
     printf("bestmove ");
     print_move(best_move);
